@@ -1,31 +1,22 @@
 {% ckan_extends %}
-  {% block basic_fields %}
-  {{ super() }}
-      {% if action.find('/resource_edit/') != -1 %}
-        {% if data.url.lower().find('/querycontext')!= -1 and data.format in ['ngsi9','ngsi10','ngsi-h'] %}
-            {% block basic_fields_service_path %}
-                {{ form.input('service_path', id='service-path', label=_('Service Path'), placeholder=_('Service Path'), value=data.service_path, error=errors.service_path, classes=['control-full']) }}
-                {% endblock %}
-            {% block basic_fields_tenant %}
-                {{ form.input('tenant', id='tenant', label=_('Tenant'), placeholder=_('Tenant'), value=data.tenant, error=errors.tenant, classes=['control-full']) }}
-                {% endblock %}
-            {% block basic_fields_oauth_req %}
-                {{ form.select('oauth_req', label=_('OAuth-Token'), options=[{'value': 'true', 'text': _('required')},{'value': 'false', 'text': _('not required')}], selected=data.oauth_req, error=errors.oauth_req) }}
-            {% endblock %}
-            {% block basic_fields_payload %}
-                {{ form.textarea('payload', id='field-payload', label=_('Payload'), placeholder=_('JSON query'), value=data.payload, error=errors.payload) }}
-            {% endblock %}
-        {% endif %}
-        {% if data.url.lower().find('/contextentities')!= -1 and data.format in ['ngsi9','ngsi10','ngsi-h'] %}
-            {% block basic_fields_service_path_ce %}
-                {{ form.input('service_path', id='service-path', label=_('Service Path'), placeholder=_('Service Path'), value=data.service_path, error=errors.service_path, classes=['control-full']) }}
-            {% endblock %}
-            {% block basic_fields_tenant_ce %}
-                {{ form.input('tenant', id='tenant', label=_('Tenant'), placeholder=_('Tenant'), value=data.tenant, error=errors.tenant, classes=['control-full']) }}
-            {% endblock %}
-            {% block basic_fields_oauth_req_ce %}
-                {{ form.select('oauth_req', label=_('OAuth-Token'), options=[{'value': 'true', 'text': _('required')},{'value': 'false', 'text': _('not required')}], selected=data.oauth_req, error=errors.oauth_req) }}
-            {% endblock %}
-        {% endif %}
-    {% endif %}
-  {% endblock basic_fields %}
+{% block basic_fields %}
+    {{ super() }}
+    {{ form.input('service_path', id='service-path', label=_('Service Path'), placeholder=_('Service Path'), value=data.service_path, error=errors.service_path, classes=['ngsiview-input', 'control-full', 'hidden']) }}
+    {{ form.input('tenant', id='tenant', label=_('Tenant'), placeholder=_('Tenant'), value=data.tenant, error=errors.tenant, classes=['ngsiview-input', 'control-full', 'hidden']) }}
+    {{ form.select('oauth_req', label=_('OAuth-Token'), options=[{'value': 'true', 'text': _('required')},{'value': 'false', 'text': _('not required')}], selected=data.oauth_req, error=errors.oauth_req, classes=['ngsiview-input', 'hidden']) }}
+
+    <script type="text/javascript">
+        document.addEventListener("DOMContentLoaded", function () {
+            $("#field-format").on("change", function (e) {
+                if (['ngsi10', 'ngsi9', 'ngsi-h'].indexOf(e.val) !== -1) {
+                    $('.ngsiview-input').removeClass('hidden');
+                } else {
+                    $('.ngsiview-input').addClass('hidden');
+                }
+            });
+            if (['ngsi10', 'ngsi9', 'ngsi-h'].indexOf($("#field-format").val()) !== -1) {
+                $('.ngsiview-input').removeClass('hidden');
+            }
+        });
+    </script>
+{% endblock basic_fields %}
