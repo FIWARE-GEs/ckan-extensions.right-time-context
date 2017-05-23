@@ -29,14 +29,14 @@
 
 {% block resource_read_url %}
     {% if res.format == "fiware-ngsi" %}
-      <p class="muted ellipsis">{{ _('URL:') }} {{ _(res.url)}}</p>
+      <p class="muted ellipsis"><b>{{ _('URL:') }}</b> {{ _(res.url)}}</p>
       {% if res.tenant %}
-          <p class="muted ellipsis">{{ _('Tenant:') }} {{ _(res.tenant)}}</p>
+          <p class="muted ellipsis"><b>{{ _('Tenant:') }}</b> {{ _(res.tenant)}}</p>
       {% endif %}
       {% if res.service_path %}
-          <p class="muted ellipsis">{{ _('Service Path:') }} {{ _(res.service_path)}}</p>
+          <p class="muted ellipsis"><b>{{ _('Service Path:') }}</b> {{ _(res.service_path)}}</p>
       {% endif %}
     {% else %}
-      <p class="muted ellipsis">{{ _('URL:') }} <a href="{{ res.url }}" title="{{ res.url }}">{{ res.url }}</a></p>
+      <p class="muted ellipsis"><b>{{ _('URL:') }}</b> <a href="{{ res.url }}" title="{{ res.url }}">{{ res.url }}</a></p>
     {% endif %}
 {% endblock %}
