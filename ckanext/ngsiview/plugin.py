@@ -76,10 +76,7 @@ class NgsiView(p.SingletonPlugin):
 
     def configure(self, config):
         self.proxy_is_enabled = config.get('ckan.resource_proxy_enabled')
-        if config.get('ckan.plugins').find('oauth2') != -1:
-            self.oauth2_is_enabled = True
-        else:
-            self.oauth2_is_enabled = False
+        self.oauth2_is_enabled = config.get('ckan.plugins').find('oauth2') != -1
 
     def info(self):
         return {'name': 'ngsiview',
@@ -99,7 +96,7 @@ class NgsiView(p.SingletonPlugin):
         proxy_enabled = p.plugin_loaded('resource_proxy')
         same_domain = datapreview.on_same_domain(data_dict)
 
-        if format_lower in self.NGSI_FORMATS and check_query(resource):
+        if format_lower == NGSI_FORMAT and check_query(resource):
             if check_query(resource):
                 return not same_domain or proxy_enabled
             else:
