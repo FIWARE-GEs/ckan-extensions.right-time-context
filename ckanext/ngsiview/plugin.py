@@ -32,6 +32,9 @@ except ImportError:
     pass
 
 
+NGSI_FORMAT = 'fiware-ngsi'
+
+
 def check_query(resource):
     if resource['url'].lower().find('/querycontext') != -1 or resource['url'].lower().find('/contextentities/') != -1:
         return True
@@ -49,8 +52,6 @@ class NgsiView(p.SingletonPlugin):
         p.implements(p.IResourceView, inherit=True)
     else:
         p.implements(p.IResourcePreview, inherit=True)
-
-    NGSI_FORMAT = 'fiware-ngsi'
 
     def before_map(self, m):
         m.connect('/dataset/{id}/resource/{resource_id}/ngsiproxy',
