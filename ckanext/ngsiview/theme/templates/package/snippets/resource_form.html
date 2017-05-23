@@ -1,6 +1,7 @@
 {% ckan_extends %}
 {% block basic_fields %}
     {{ super() }}
+
     {{ form.input('service_path', id='service-path', label=_('Service Path'), placeholder=_('Service Path'), value=data.service_path, error=errors.service_path, classes=['ngsiview-input', 'control-full', 'hidden']) }}
     {{ form.input('tenant', id='tenant', label=_('Tenant'), placeholder=_('Tenant'), value=data.tenant, error=errors.tenant, classes=['ngsiview-input', 'control-full', 'hidden']) }}
     {{ form.select('oauth_req', label=_('OAuth-Token'), options=[{'value': 'true', 'text': _('required')},{'value': 'false', 'text': _('not required')}], selected=data.oauth_req, error=errors.oauth_req, classes=['ngsiview-input', 'hidden']) }}
@@ -10,12 +11,21 @@
             $("#field-format").on("change", function (e) {
                 if (['ngsi10', 'ngsi9', 'ngsi-h'].indexOf(e.val) !== -1) {
                     $('.ngsiview-input').removeClass('hidden');
+
+                    // Support the datastore plugin
+                    $('.btn-remove-url').addClass('hidden');
+                    $("#field-image-upload + a + a")[0].click();
                 } else {
                     $('.ngsiview-input').addClass('hidden');
+                    // Support the datastore plugin
+                    $('.btn-remove-url').removeClass('hidden');
                 }
             });
             if (['ngsi10', 'ngsi9', 'ngsi-h'].indexOf($("#field-format").val()) !== -1) {
                 $('.ngsiview-input').removeClass('hidden');
+                // Support the datastore plugin
+                $('.btn-remove-url').addClass('hidden');
+                $("#field-image-upload + a + a")[0].click();
             }
         });
     </script>
