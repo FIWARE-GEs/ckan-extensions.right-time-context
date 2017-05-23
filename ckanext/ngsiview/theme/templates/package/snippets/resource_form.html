@@ -5,8 +5,24 @@
     {{ form.input('service_path', id='service-path', label=_('Service Path'), placeholder=_('Service Path'), value=data.service_path, error=errors.service_path, classes=['ngsiview-input', 'control-full', 'hidden']) }}
     {{ form.input('tenant', id='tenant', label=_('Tenant'), placeholder=_('Tenant'), value=data.tenant, error=errors.tenant, classes=['ngsiview-input', 'control-full', 'hidden']) }}
     {{ form.select('oauth_req', label=_('OAuth-Token'), options=[{'value': 'true', 'text': _('required')},{'value': 'false', 'text': _('not required')}], selected=data.oauth_req, error=errors.oauth_req, classes=['ngsiview-input', 'hidden']) }}
+    {{ form.textarea('payload', id='field-payload', label=_('Payload'), placeholder=_('JSON query'), value=data.payload, error=errors.payload, classes=['ngsiview-v1'])}}
 
     <script type="text/javascript">
+        var updatePayloadField = function updatePayloadField() {
+            var url, field = $("#field-image-url");
+            try {
+                url = new URL(field.val());
+            } catch (e) {
+                url = new URL('http://' + field.val());
+            }
+
+            if (url.pathname.indexOf('/v1/queryContext') !== -1) {
+                $('.ngsiview-v1').removeClass('hidden');
+            } else {
+                $('.ngsiview-v1').addClass('hidden');
+            }
+        };
+
         document.addEventListener("DOMContentLoaded", function () {
             $("#field-format").on("change", function (e) {
                 if (e.val === "fiware-ngsi") {
@@ -21,10 +37,14 @@
                     $('.btn-remove-url').removeClass('hidden');
                 }
             });
+
             if ($("#field-format").val() === "fiware-ngsi") {
                 $('.ngsiview-input').removeClass('hidden');
                 // Support the datastore plugin
-                setTimeout(() => {
+                setTimeout(function () {
+                    $("#field-image-url").on("input", updatePayloadField);
+
+                    updatePayloadField();
                     $('.btn-remove-url').addClass('hidden');
                     $("#field-image-upload + a + a")[0].click();
                 }, 200);
