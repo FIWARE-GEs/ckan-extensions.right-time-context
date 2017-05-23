@@ -24,8 +24,10 @@
             if ($("#field-format").val() === "fiware-ngsi") {
                 $('.ngsiview-input').removeClass('hidden');
                 // Support the datastore plugin
-                $('.btn-remove-url').addClass('hidden');
-                $("#field-image-upload + a + a")[0].click();
+                setTimeout(() => {
+                    $('.btn-remove-url').addClass('hidden');
+                    $("#field-image-upload + a + a")[0].click();
+                }, 200);
             }
         });
     </script>
