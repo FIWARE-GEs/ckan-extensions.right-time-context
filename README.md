@@ -31,7 +31,7 @@ The way to create a NGSI resource is fairly simple:
    ![image1](/ckanext/ngsiview/instructions/img1.png?raw=true)
    ![image2](/ckanext/ngsiview/instructions/img2.png?raw=true)
 
-3. Complete the Format field with ngsi9 or ngsi10 and click on add resource. This is an important step, and without it the extension won’t do anything with your resource.
+3. Complete the Format field with `fiware-ngsi` and click on add resource. This is an important step, and without it the extension won’t do anything with your resource.
    ![image3](/ckanext/ngsiview/instructions/img3.png?raw=true)
 
 4. Finally set the OAuth-token field to required if you are working with Orion ContextBroker at http://orion.lab.fiware.org:1026. Additionally you can also manage the [tenant](https://forge.fiware.org/plugins/mediawiki/wiki/fiware/index.php/Publish/Subscribe_Broker_-_Orion_Context_Broker_-_User_and_Programmers_Guide#Multi_service_tenancy) and the [service path](https://forge.fiware.org/plugins/mediawiki/wiki/fiware/index.php/Publish/Subscribe_Broker_-_Orion_Context_Broker_-_User_and_Programmers_Guide#Entity_service_paths) as the same way that it is explained at Orion Context Broker documentation.

@@ -7,7 +7,7 @@ ckan.module('ngsiviewmap',function(jQuery,_){
                         dataConverter:function(data){return JSON.stringify(data,null,2);},
                         language:'json',type:'GET'}},
         initialize:function(){
-            if(preload_resource['format'].toLowerCase() == "ngsi9" || preload_resource['format'].toLowerCase() == "ngsi10"){
+            if (preload_resource['format'].toLowerCase() === "fiware-ngsi") {
                 document.getElementById('map').style.height = '400px';
                 document.getElementById('map').style.border = '1px solid rgba(0, 0, 0, 0.15)';
 

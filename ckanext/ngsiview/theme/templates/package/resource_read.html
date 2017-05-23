@@ -28,7 +28,7 @@
 
 
 {% block resource_read_url %}
-    {% if res.format in ("ngsi9", "ngsi10", "ngsi-h") %}
+    {% if res.format == "fiware-ngsi" %}
       <p class="muted ellipsis">{{ _('URL:') }} {{ _(res.url)}}</p>
       {% if res.tenant %}
           <p class="muted ellipsis">{{ _('Tenant:') }} {{ _(res.tenant)}}</p>

@@ -9,7 +9,7 @@
     <script type="text/javascript">
         document.addEventListener("DOMContentLoaded", function () {
             $("#field-format").on("change", function (e) {
-                if (['ngsi10', 'ngsi9', 'ngsi-h'].indexOf(e.val) !== -1) {
+                if (e.val === "fiware-ngsi") {
                     $('.ngsiview-input').removeClass('hidden');
 
                     // Support the datastore plugin
@@ -21,7 +21,7 @@
                     $('.btn-remove-url').removeClass('hidden');
                 }
             });
-            if (['ngsi10', 'ngsi9', 'ngsi-h'].indexOf($("#field-format").val()) !== -1) {
+            if ($("#field-format").val() === "fiware-ngsi") {
                 $('.ngsiview-input').removeClass('hidden');
                 // Support the datastore plugin
                 $('.btn-remove-url').addClass('hidden');

@@ -50,7 +50,7 @@ class NgsiView(p.SingletonPlugin):
     else:
         p.implements(p.IResourcePreview, inherit=True)
 
-    NGSI_FORMATS = ['ngsi9','ngsi10','ngsi-h']
+    NGSI_FORMAT = 'fiware-ngsi'
 
     def before_map(self, m):
         m.connect('/dataset/{id}/resource/{resource_id}/ngsiproxy',
@@ -141,7 +141,6 @@ class NgsiView(p.SingletonPlugin):
 
     def setup_template_variables(self, context, data_dict):
     	if p.toolkit.check_ckan_version(min_version='2.3'):
-            metadata = {'ngsi_formats': self.NGSI_FORMATS}
             resource = data_dict['resource']
             proxy_enabled = p.plugin_loaded('resource_proxy')
             oauth2_enabled = p.plugin_loaded('oauth2')
