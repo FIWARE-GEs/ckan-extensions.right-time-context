@@ -5,11 +5,17 @@
     {{ form.input('service_path', id='service-path', label=_('Service Path'), placeholder=_('Service Path'), value=data.service_path, error=errors.service_path, classes=['ngsiview-input', 'control-full', 'hidden']) }}
     {{ form.input('tenant', id='tenant', label=_('Tenant'), placeholder=_('Tenant'), value=data.tenant, error=errors.tenant, classes=['ngsiview-input', 'control-full', 'hidden']) }}
     {{ form.select('oauth_req', label=_('OAuth-Token'), options=[{'value': 'true', 'text': _('required')},{'value': 'false', 'text': _('not required')}], selected=data.oauth_req, error=errors.oauth_req, classes=['ngsiview-input', 'hidden']) }}
-    {{ form.textarea('payload', id='field-payload', label=_('Payload'), placeholder=_('JSON query'), value=data.payload, error=errors.payload, classes=['ngsiview-v1'])}}
+    {{ form.textarea('payload', id='field-payload', label=_('Payload'), placeholder=_('JSON query'), value=data.payload, error=errors.payload, classes=['ngsiview-v1', 'hidden'])}}
 
     <script type="text/javascript">
         var updatePayloadField = function updatePayloadField() {
             var url, field = $("#field-image-url");
+
+            if ($("#field-format").val() !== "fiware-ngsi") {
+                $('.ngsiview-v1').addClass('hidden');
+                return;
+            }
+
             try {
                 url = new URL(field.val());
             } catch (e) {
@@ -25,9 +31,9 @@
 
         document.addEventListener("DOMContentLoaded", function () {
             $("#field-format").on("change", function (e) {
+                updatePayloadField();
                 if (e.val === "fiware-ngsi") {
                     $('.ngsiview-input').removeClass('hidden');
-
                     // Support the datastore plugin
                     $('.btn-remove-url').addClass('hidden');
                     $("#field-image-upload + a + a")[0].click();
@@ -42,13 +48,16 @@
                 $('.ngsiview-input').removeClass('hidden');
                 // Support the datastore plugin
                 setTimeout(function () {
-                    $("#field-image-url").on("input", updatePayloadField);
-
                     updatePayloadField();
                     $('.btn-remove-url').addClass('hidden');
                     $("#field-image-upload + a + a")[0].click();
                 }, 200);
             }
+
+            setTimeout(function () {
+                $("#field-image-url").on("input", updatePayloadField);
+            }, 200);
+
         });
     </script>
 {% endblock basic_fields %}
