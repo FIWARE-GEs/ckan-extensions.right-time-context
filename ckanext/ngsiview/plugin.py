@@ -36,10 +36,8 @@ NGSI_FORMAT = 'fiware-ngsi'
 
 
 def check_query(resource):
-    if resource['url'].lower().find('/querycontext') != -1 or resource['url'].lower().find('/contextentities/') != -1:
-        return True
-    else:
-        return False
+    parsedurl = resource['url']
+    return parsedurl.find('/v2/entities') != 1 or parsedurl.find('/v1/querycontext') != -1 or parsedurl.find('/v1/contextentities/') != -1
 
 
 class NgsiView(p.SingletonPlugin):
@@ -60,7 +58,7 @@ class NgsiView(p.SingletonPlugin):
 
     def get_proxified_ngsi_url(self, data_dict):
         url = h.url_for(action='proxy_ngsi_resource', controller='ckanext.ngsiview.controller:ProxyNGSIController',
-        id=data_dict['package']['name'], resource_id=data_dict['resource']['id'])
+        id = data_dict['package']['name'], resource_id=data_dict['resource']['id'])
         log.info('Proxified url is {0}'.format(url))
         return url
 
@@ -98,10 +96,7 @@ class NgsiView(p.SingletonPlugin):
         same_domain = datapreview.on_same_domain(data_dict)
 
         if format_lower == NGSI_FORMAT and check_query(resource):
-            if check_query(resource):
-                return not same_domain or proxy_enabled
-            else:
-                return False
+            return not same_domain or proxy_enabled
         else:
             return False
 
@@ -149,50 +144,43 @@ class NgsiView(p.SingletonPlugin):
             else:
                 oauth_req = resource['oauth_req']
 
-            if proxy_enabled and not same_domain:
-                if check_query(resource):
-                    if oauth_req == 'true' and not p.toolkit.c.user:
-                        details = "</br></br>In order to see this resource properly, you need to be logged in.</br></br></br>"
-                        f_details = "In order to see this resource properly, you need to be logged in."
-                        h.flash_error(f_details, allow_html=False)
-                        view_enable = [False, details]
-                        url = proxy.get_proxified_resource_url(data_dict)
-
-                    elif oauth_req == 'true' and not oauth2_enabled:
-                        details = "</br></br>In order to see this resource properly, enable oauth2 extension</br></br></br>"
-                        f_details = "In order to see this resource properly, enable oauth2 extension."
-                        h.flash_error(f_details, allow_html=False)
-                        view_enable = [False, details]
-                        url = proxy.get_proxified_resource_url(data_dict)
-
-                    else:
-                        url = self.get_proxified_ngsi_url(data_dict)
-                        data_dict['resource']['url'] = url
-                        view_enable = [True, 'OK']
-
-                else:
-                    details = "</br></br>This is not a ContextBroker query, please check <a href='https://forge.fiware.org/plugins/mediawiki/wiki/fiware/index.php/Publish/Subscribe_Broker_-_Orion_Context_Broker_-_User_and_Programmers_Guide'>Orion Context Broker documentation</a></br></br></br>"
-                    f_details = "This is not a ContextBroker query, please check Orion Context Broker documentation."
-                    h.flash_error(f_details, allow_html=False)
-                    view_enable = [False, details]
-                    url = proxy.get_proxified_resource_url(data_dict)
-            else:
-                if proxy_enabled:
-                    details = "</br></br>Enable resource_proxy</br></br></br>"
-                    f_details = "Enable resource_proxy."
-
-                else:
-                    details = "</br></br>This is not a ContextBroker query, please check <a href='https://forge.fiware.org/plugins/mediawiki/wiki/fiware/index.php/Publish/Subscribe_Broker_-_Orion_Context_Broker_-_User_and_Programmers_Guide'>Orion Context Broker documentation</a></br></br></br>"
-                    f_details = "This is not a ContextBroker query, please check Orion Context Broker documentation."
-
+            url = resource['url']
+            if not check_query(resource):
+                details = "</br></br>This is not a ContextBroker query, please check <a href='https://forge.fiware.org/plugins/mediawiki/wiki/fiware/index.php/Publish/Subscribe_Broker_-_Orion_Context_Broker_-_User_and_Programmers_Guide'>Orion Context Broker documentation</a></br></br></br>"
+                f_details = "This is not a ContextBroker query, please check Orion Context Broker documentation."
+                h.flash_error(f_details, allow_html=False)
+                view_enable = [False, details]
+            elif not same_domain and not proxy_enabled:
+                details = "</br></br>Enable resource_proxy</br></br></br>"
+                f_details = "Enable resource_proxy."
                 h.flash_error(f_details, allow_html=False)
                 view_enable = [False, details]
                 url = ''
+            else:
+                if not same_domain:
+                    url = self.get_proxified_ngsi_url(data_dict)
 
-            return {'preview_metadata': json.dumps(metadata),
-                    'resource_json': json.dumps(data_dict['resource']),
-                    'resource_url': json.dumps(url),
-                    'view_enable': json.dumps(view_enable)}
+                if oauth_req == 'true' and not p.toolkit.c.user:
+                    details = "</br></br>In order to see this resource properly, you need to be logged in.</br></br></br>"
+                    f_details = "In order to see this resource properly, you need to be logged in."
+                    h.flash_error(f_details, allow_html=False)
+                    view_enable = [False, details]
+
+                elif oauth_req == 'true' and not oauth2_enabled:
+                    details = "</br></br>In order to see this resource properly, enable oauth2 extension</br></br></br>"
+                    f_details = "In order to see this resource properly, enable oauth2 extension."
+                    h.flash_error(f_details, allow_html=False)
+                    view_enable = [False, details]
+
+                else:
+                    data_dict['resource']['url'] = url
+                    view_enable = [True, 'OK']
+
+            return {
+                'resource_json': json.dumps(data_dict['resource']),
+                'resource_url': json.dumps(url),
+                'view_enable': json.dumps(view_enable)
+            }
         else:
             if self.proxy_is_enabled and not data_dict['resource']['on_same_domain']:
                 if check_query(data_dict['resource']):
