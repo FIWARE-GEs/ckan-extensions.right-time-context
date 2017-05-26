@@ -37,16 +37,19 @@ def proxy_ngsi_resource(context, data_dict):
     resource = logic.get_action('resource_show')(context, {'id': resource_id})
 
     try:
+
+        headers = {
+            'Accept': 'application/json'
+        }
+
         if 'oauth_req' in resource and resource['oauth_req'] == 'true':
             token = p.toolkit.c.usertoken['access_token']
-            headers = {'X-Auth-Token': token, 'Content-Type': 'application/json', 'Accept': 'application/json'}
-        else:
-            headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
+            headers['X-Auth-Token'] = token
 
         if resource.get('tenant', '') != '':
-            headers['Fiware-Service'] = resource['tenant']
+            headers['FIWARE-Service'] = resource['tenant']
         if resource.get('service_path', '') != '':
-            headers['Fiware-ServicePath'] = resource['service_path']
+            headers['FIWARE-ServicePath'] = resource['service_path']
 
 
         url = resource['url']
@@ -69,6 +72,7 @@ def proxy_ngsi_resource(context, data_dict):
                 details = "Payload field doesn't contain valid JSON data."
                 base.abort(409, detail=details)
 
+            headers['Content-Type'] = "application/json"
             r = requests.post(url, headers=headers, data=resource["payload"], stream=True)
 
         else:
