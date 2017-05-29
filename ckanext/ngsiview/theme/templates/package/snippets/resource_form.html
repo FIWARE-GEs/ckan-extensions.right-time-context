@@ -22,7 +22,13 @@
                 try {
                     url = new URL(encodeURI(field.val()));
                 } catch (e2) {
-                    url = new URL(encodeURI('http://' + field.val()));
+                    try {
+                        url = new URL(encodeURI('http://' + field.val()));
+                    } catch (e3) {
+                        // Totally broken url
+                        $('.ngsiview-v1').addClass('hidden');
+                        return;
+                    }
                 }
             }
 
