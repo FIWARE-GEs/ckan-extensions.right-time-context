@@ -11,7 +11,7 @@
         var updatePayloadField = function updatePayloadField() {
             var url, field = $("#field-image-url");
 
-            if ($("#field-format").val() !== "fiware-ngsi") {
+            if ($("#field-format").val() !== "fiware-ngsi" || field.val().trim() === "") {
                 $('.ngsiview-v1').addClass('hidden');
                 return;
             }
