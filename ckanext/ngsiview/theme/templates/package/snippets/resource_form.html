@@ -39,11 +39,13 @@
                 if (e.val === "fiware-ngsi") {
                     $('.ngsiview-input').removeClass('hidden');
                     // Support the datastore plugin
+                    $("#field-image-url").css("padding-right", "");
                     $('.btn-remove-url').addClass('hidden');
                     $("#field-image-upload + a + a")[0].click();
                 } else {
                     $('.ngsiview-input').addClass('hidden');
                     // Support the datastore plugin
+                    $("#field-image-url").css("padding-right", "6px");
                     $('.btn-remove-url').removeClass('hidden');
                 }
             });
@@ -53,6 +55,7 @@
                 // Support the datastore plugin
                 setTimeout(function () {
                     updatePayloadField();
+                    $("#field-image-url").css("padding-right", "6px");
                     $('.btn-remove-url').addClass('hidden');
                     $("#field-image-upload + a + a")[0].click();
                 }, 200);
