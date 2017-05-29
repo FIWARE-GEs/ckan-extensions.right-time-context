@@ -19,7 +19,11 @@
             try {
                 url = new URL(field.val());
             } catch (e) {
-                url = new URL('http://' + field.val());
+                try {
+                    url = new URL(encodeURI(field.val()));
+                } catch (e2) {
+                    url = new URL(encodeURI('http://' + field.val()));
+                }
             }
 
             if (url.pathname.indexOf('/v1/queryContext') !== -1) {
