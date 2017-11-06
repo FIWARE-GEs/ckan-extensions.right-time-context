@@ -84,7 +84,7 @@ class NgsiView(p.SingletonPlugin):
     def info(self):
         return {'name': 'ngsiview',
                 'title': p.toolkit._('NGSI'),
-                'icon': 'file-text-alt',
+                'icon': 'file-text-o' if p.toolkit.check_ckan_version(min_version='2.7') else 'file-text-alt',
                 'default_title': p.toolkit._('NGSI'),
                 'default_description': 'NGSI resource',
                 'always_available': False,
