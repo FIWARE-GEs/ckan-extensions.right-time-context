@@ -9,13 +9,13 @@
       <li>
         <a class="btn btn-primary resource-url-analytics resource-type-{{ res.resource_type }}" href="{{ res.url }}">
           {% if res.resource_type in ('listing', 'service') %}
-            <i class="icon-eye-open"></i> {{ _('View') }}
+            <i class="icon-eye-open fa fa-eye"></i> {{ _('View') }}
           {% elif  res.resource_type == 'api' %}
-            <i class="icon-key"></i> {{ _('API Endpoint') }}
+            <i class="icon-key fa fa-key"></i> {{ _('API Endpoint') }}
           {% elif not res.has_views or not res.can_be_previewed %}
-            <i class="icon-external-link"></i> {{ _('Go to resource') }}
+            <i class="icon-external-link fa fa-external-link"></i> {{ _('Go to resource') }}
           {% else %}
-            <i class="icon-download"></i> {{ _('Download') }}
+            <i class="icon-download fa fa-download"></i> {{ _('Download') }}
           {% endif %}
         </a>
       </li>
