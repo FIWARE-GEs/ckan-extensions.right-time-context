@@ -35,7 +35,7 @@ NGSI_FORMAT = 'fiware-ngsi'
 
 def check_query(resource):
     parsedurl = resource['url']
-    return parsedurl.find('/v2/entities') != 1 or parsedurl.find('/v1/querycontext') != -1 or parsedurl.find('/v1/contextentities/') != -1
+    return parsedurl.find('/v2/entities') != -1 or parsedurl.find('/v1/querycontext') != -1 or parsedurl.find('/v1/contextentities/') != -1
 
 
 class NgsiView(p.SingletonPlugin):
@@ -101,7 +101,7 @@ class NgsiView(p.SingletonPlugin):
         same_domain = datapreview.on_same_domain(data_dict)
 
         if format_lower == NGSI_FORMAT and check_query(resource):
-            return not same_domain or proxy_enabled
+            return same_domain or proxy_enabled
         else:
             return False
 
