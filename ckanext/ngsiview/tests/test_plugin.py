@@ -15,16 +15,15 @@
 # General Public License for more details.
 #
 # You should have received a copy of the GNU Affero General Public License
-# along with Orion Context Broker. If not, see http://www.gnu.org/licenses/.
-# This file is part of CKAN WireCloud View Extension.
+# along with ckanext-ngsiview. If not, see http://www.gnu.org/licenses/.
 
 import unittest
 
 import ckanext.ngsiview.plugin as plugin
 
 
-class WirecloudViewPluginTest(unittest.TestCase):
+class NgsiViewPluginTest(unittest.TestCase):
 
     def test_can_view_returns_false_unnamaged_format(self):
-        instance = plugin.WirecloudView()
+        instance = plugin.NgsiView()
         self.assertFalse(instance.can_view({'resource': {'format': 'CSV'}, }))
