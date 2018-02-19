@@ -51,7 +51,6 @@ def proxy_ngsi_resource(context, data_dict):
         if resource.get('service_path', '') != '':
             headers['FIWARE-ServicePath'] = resource['service_path']
 
-
         url = resource['url']
         try:
             parsedurl = urlparse.urlsplit(url)
@@ -79,7 +78,7 @@ def proxy_ngsi_resource(context, data_dict):
             r = requests.get(url, headers=headers, stream=True)
 
         if r.status_code == 401:
-	    if 'oauth_req' in resource and resource['oauth_req'] == 'true':
+            if 'oauth_req' in resource and resource['oauth_req'] == 'true':
                 details = 'ERROR 401 token expired. Retrieving new token, reload please.'
                 log.info(details)
                 base.abort(409, detail=details)

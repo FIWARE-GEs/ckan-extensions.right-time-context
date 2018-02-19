@@ -26,8 +26,6 @@ log = logging.getLogger(__name__)
 
 try:
     import ckan.lib.datapreview as datapreview
-    from ckan.common import _, request
-    import ckanext.resourceproxy.plugin as proxy
 except ImportError:
     pass
 
@@ -52,13 +50,20 @@ class NgsiView(p.SingletonPlugin):
         p.implements(p.IResourcePreview, inherit=True)
 
     def before_map(self, m):
-        m.connect('/dataset/{id}/resource/{resource_id}/ngsiproxy',
-        controller='ckanext.ngsiview.controller:ProxyNGSIController', action='proxy_ngsi_resource')
+        m.connect(
+            '/dataset/{id}/resource/{resource_id}/ngsiproxy',
+            controller='ckanext.ngsiview.controller:ProxyNGSIController',
+            action='proxy_ngsi_resource'
+        )
         return m
 
     def get_proxified_ngsi_url(self, data_dict):
-        url = h.url_for(action='proxy_ngsi_resource', controller='ckanext.ngsiview.controller:ProxyNGSIController',
-        id = data_dict['package']['name'], resource_id=data_dict['resource']['id'])
+        url = h.url_for(
+            action='proxy_ngsi_resource',
+            controller='ckanext.ngsiview.controller:ProxyNGSIController',
+            id=data_dict['package']['name'],
+            resource_id=data_dict['resource']['id']
+        )
         log.info('Proxified url is {0}'.format(url))
         return url
 
@@ -68,7 +73,7 @@ class NgsiView(p.SingletonPlugin):
         p.toolkit.add_resource('theme/public', 'ckanext-ngsiview')
         p.toolkit.add_public_directory(config, 'theme/public')
 
-    	if p.toolkit.check_ckan_version(min_version='2.3'):
+        if p.toolkit.check_ckan_version(min_version='2.3'):
             p.toolkit.add_template_directory(config, 'theme/templates')
         else:
             p.toolkit.add_template_directory(config, 'theme/templates/old_templates')
@@ -120,8 +125,7 @@ class NgsiView(p.SingletonPlugin):
                     details = "Enable oauth2 extension"
                     h.flash_error(details, allow_html=False)
                     return {'can_preview': False, 'fixable': details, 'quality': 2}
-                elif (resource['url'].lower().find('/querycontext') != -1
-                      and 'payload' not in resource):
+                elif resource['url'].lower().find('/querycontext') != -1 and 'payload' not in resource:
                     details = "Add a payload to complete the query"
                     h.flash_error(details, allow_html=False)
                     return {'can_preview': False, 'fixable': details, 'quality': 2}
@@ -133,7 +137,7 @@ class NgsiView(p.SingletonPlugin):
             return {'can_preview': False}
 
     def setup_template_variables(self, context, data_dict):
-    	if p.toolkit.check_ckan_version(min_version='2.3'):
+        if p.toolkit.check_ckan_version(min_version='2.3'):
             resource = data_dict['resource']
             proxy_enabled = p.plugin_loaded('resource_proxy')
             oauth2_enabled = p.plugin_loaded('oauth2')
