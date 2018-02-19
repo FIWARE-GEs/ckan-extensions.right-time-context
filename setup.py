@@ -35,6 +35,10 @@ setup(
     package_data={
     },
     data_files=[],
+    tests_require=[
+        'parameterized',
+    ],
+    test_suite='nosetests',
     entry_points='''
         [ckan.plugins]
         ngsiview=ckanext.ngsiview.plugin:NgsiView

@@ -19,11 +19,28 @@
 
 import unittest
 
+from mock import patch
+from parameterized import parameterized
+
 import ckanext.ngsiview.plugin as plugin
 
 
 class NgsiViewPluginTest(unittest.TestCase):
 
-    def test_can_view_returns_false_unnamaged_format(self):
+    @parameterized([
+        ('CSV', '', False, False),
+        ('CSV', '', True, False),
+        ('fiware-ngsi', 'https://cb.example.com/v2/entities', True, False, True),
+        ('FIWARE-ngsi', 'https://cb.example.com/v2/entities', True, False, True),
+        ('fiware-ngsi', 'https://cb.example.com/v2/entities', False, False, False),
+        ('FIWARE-ngsi', 'https://cb.example.com/v2/entities', False, True, True),
+        ('FIWARE-ngsi', 'https://cb.example.com/othe/path', True, False, False),
+    ])
+    def test_can_view(self, resource_format, resource_url, same_domain, proxy_enabled, expected):
         instance = plugin.NgsiView()
-        self.assertFalse(instance.can_view({'resource': {'format': 'CSV'}, }))
+        with patch('ckanext.ngsiview.plugin.datapreview') as datapreview_mock:
+            datapreview_mock.on_same_domain.return_value = same_domain
+            self.assertEqual(
+                instance.can_view({'resource': {'format': resource_format, 'url': resource_url}}),
+                expected
+            )
