@@ -15,4 +15,4 @@ script:
 after_success: coveralls
 branches:
   only:
-    - develop
+    - ngsiv2
