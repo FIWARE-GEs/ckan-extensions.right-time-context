@@ -55,18 +55,33 @@ python setup.py develop
 
 ## How it works
 
+
+### How to create a `fiware-ngsi` resource
+
 The way to create a NGSI resource is fairly simple:
 
 1. Firstly you have to access to the form for creating a new resource.
 
-3. Complete the Format field with `fiware-ngsi` and click on add resource. This is an important step, and without it the extension won’t do anything with your resource.
-   ![image3](/ckanext/ngsiview/instructions/img3.png?raw=true)
-2. Fill the URL field with a Context Broker query, if your query is a convenience operation, you only have to fill the URL field with it.
+   ![Create resource form](images/create_resource_form.png)
 
-   ![image1](/ckanext/ngsiview/instructions/img1.png?raw=true)
-   ![image2](/ckanext/ngsiview/instructions/img2.png?raw=true)
+3. Use `fiware-ngsi` to fill the `Format` field, this will make the form change
+   adding some extra fields required when using the `fiware-ngsi` format.
 
+   ![Create resource after switching to the fiware-ngsi format](images/create_resource_form_fiwarengsi.png)
 
-4. Finally set the OAuth-token field to required if you are working with Context Broker at . Additionally you can also manage the [tenant](https://forge.fiware.org/plugins/mediawiki/wiki/fiware/index.php/Publish/Subscribe_Broker_-_Orion_Context_Broker_-_User_and_Programmers_Guide#Multi_service_tenancy) and the [service path](https://forge.fiware.org/plugins/mediawiki/wiki/fiware/index.php/Publish/Subscribe_Broker_-_Orion_Context_Broker_-_User_and_Programmers_Guide#Entity_service_paths) as the same way that it is explained at Orion Context Broker documentation.
+2. Fill the `URL` field with a Context Broker query. It is recommended to use a
+   NGSIv2 query, but it is possible to use also a v1 convenience query context
+   url. Examples are:
 
-   ![image5](/ckanext/ngsiview/instructions/img5.png?raw=true)
+    - `http://orion.lab.fiware.org:1026/v2/entities?type=AirQualityObserved`
+    - `http://orion.lab.fiware.org:1026/v1/contextEntities/MeteoLo`
+
+3. Finally, check if you have to use some of the extra options:
+    - Set the `OAuth-Token` option to `required` if the Context Broker server
+        requires authentication.
+    - Fill the `FIWARE-Service` field if the data is not provided by the default
+        [tenant](http://fiware-orion.readthedocs.io/en/master/user/multitenancy/).
+    - And finally, fill the `FIWARE-ServicePath` field if the data should be
+        filtered using a [service path](http://fiware-orion.readthedocs.io/en/master/user/service_path/).
+
+4. Once you provide all the requested information, click on the *Add* button.
