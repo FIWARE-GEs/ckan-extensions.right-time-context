@@ -1,31 +1,76 @@
 {% ckan_extends %}
-  {% block basic_fields %}
-  {{ super() }}
-      {% if action.find('/resource_edit/') != -1 %}
-        {% if data.url.lower().find('/querycontext')!= -1 and data.format in ['ngsi9','ngsi10','ngsi-h'] %}
-            {% block basic_fields_service_path %}
-                {{ form.input('service_path', id='service-path', label=_('Service Path'), placeholder=_('Service Path'), value=data.service_path, error=errors.service_path, classes=['control-full']) }}
-                {% endblock %}
-            {% block basic_fields_tenant %}
-                {{ form.input('tenant', id='tenant', label=_('Tenant'), placeholder=_('Tenant'), value=data.tenant, error=errors.tenant, classes=['control-full']) }}
-                {% endblock %}
-            {% block basic_fields_oauth_req %}
-                {{ form.select('oauth_req', label=_('OAuth-Token'), options=[{'value': 'true', 'text': _('required')},{'value': 'false', 'text': _('not required')}], selected=data.oauth_req, error=errors.oauth_req) }}
-            {% endblock %}
-            {% block basic_fields_payload %}
-                {{ form.textarea('payload', id='field-payload', label=_('Payload'), placeholder=_('JSON query'), value=data.payload, error=errors.payload) }}
-            {% endblock %}
-        {% endif %}
-        {% if data.url.lower().find('/contextentities')!= -1 and data.format in ['ngsi9','ngsi10','ngsi-h'] %}
-            {% block basic_fields_service_path_ce %}
-                {{ form.input('service_path', id='service-path', label=_('Service Path'), placeholder=_('Service Path'), value=data.service_path, error=errors.service_path, classes=['control-full']) }}
-            {% endblock %}
-            {% block basic_fields_tenant_ce %}
-                {{ form.input('tenant', id='tenant', label=_('Tenant'), placeholder=_('Tenant'), value=data.tenant, error=errors.tenant, classes=['control-full']) }}
-            {% endblock %}
-            {% block basic_fields_oauth_req_ce %}
-                {{ form.select('oauth_req', label=_('OAuth-Token'), options=[{'value': 'true', 'text': _('required')},{'value': 'false', 'text': _('not required')}], selected=data.oauth_req, error=errors.oauth_req) }}
-            {% endblock %}
-        {% endif %}
-    {% endif %}
-  {% endblock basic_fields %}
+{% block basic_fields %}
+    {{ super() }}
+
+    {{ form.input('tenant', id='tenant', label=_('Tenant'), placeholder=_('Tenant'), value=data.tenant, error=errors.tenant, classes=['ngsiview-input', 'control-full', 'hidden']) }}
+    {{ form.input('service_path', id='service-path', label=_('Service Path'), placeholder=_('Service Path'), value=data.service_path, error=errors.service_path, classes=['ngsiview-input', 'control-full', 'hidden']) }}
+    {{ form.select('oauth_req', label=_('OAuth-Token'), options=[{'value': 'true', 'text': _('required')},{'value': 'false', 'text': _('not required')}], selected=data.oauth_req, error=errors.oauth_req, classes=['ngsiview-input', 'hidden']) }}
+    {{ form.textarea('payload', id='field-payload', label=_('Payload'), placeholder=_('JSON query'), value=data.payload, error=errors.payload, classes=['ngsiview-v1', 'hidden'])}}
+
+    <script type="text/javascript">
+        var updatePayloadField = function updatePayloadField() {
+            var url, field = $("#field-image-url");
+
+            if ($("#field-format").val() !== "fiware-ngsi" || field.val().trim() === "") {
+                $('.ngsiview-v1').addClass('hidden');
+                return;
+            }
+
+            try {
+                url = new URL(field.val());
+            } catch (e) {
+                try {
+                    url = new URL(encodeURI(field.val()));
+                } catch (e2) {
+                    try {
+                        url = new URL(encodeURI('http://' + field.val()));
+                    } catch (e3) {
+                        // Totally broken url
+                        $('.ngsiview-v1').addClass('hidden');
+                        return;
+                    }
+                }
+            }
+
+            if (url.pathname.indexOf('/v1/queryContext') !== -1) {
+                $('.ngsiview-v1').removeClass('hidden');
+            } else {
+                $('.ngsiview-v1').addClass('hidden');
+            }
+        };
+
+        document.addEventListener("DOMContentLoaded", function () {
+            $("#field-format").on("change", function (e) {
+                updatePayloadField();
+                if (e.val === "fiware-ngsi") {
+                    $('.ngsiview-input').removeClass('hidden');
+                    // Support the datastore plugin
+                    $("#field-image-url").css("padding-right", "6px");
+                    $('.btn-remove-url').addClass('hidden');
+                    $("#field-image-upload + a + a")[0].click();
+                } else {
+                    $('.ngsiview-input').addClass('hidden');
+                    // Support the datastore plugin
+                    $("#field-image-url").css("padding-right", "");
+                    $('.btn-remove-url').removeClass('hidden');
+                }
+            });
+
+            if ($("#field-format").val() === "fiware-ngsi") {
+                $('.ngsiview-input').removeClass('hidden');
+                // Support the datastore plugin
+                setTimeout(function () {
+                    updatePayloadField();
+                    $("#field-image-url").css("padding-right", "6px");
+                    $('.btn-remove-url').addClass('hidden');
+                    $("#field-image-upload + a + a")[0].click();
+                }, 200);
+            }
+
+            setTimeout(function () {
+                $("#field-image-url").on("input", updatePayloadField);
+            }, 200);
+
+        });
+    </script>
+{% endblock basic_fields %}

@@ -37,60 +37,48 @@ def proxy_ngsi_resource(context, data_dict):
     resource = logic.get_action('resource_show')(context, {'id': resource_id})
 
     try:
+
+        headers = {
+            'Accept': 'application/json'
+        }
+
         if 'oauth_req' in resource and resource['oauth_req'] == 'true':
             token = p.toolkit.c.usertoken['access_token']
-            headers = {'X-Auth-Token': token, 'Content-Type': 'application/json', 'Accept': 'application/json'}
-        else:
-            headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
+            headers['X-Auth-Token'] = token
 
-
-	
-        if 'tenant' in resource:
-            headers['Fiware-Service'] = resource['tenant']
-        if 'service_path' in resource:
-            headers['Fiware-ServicePath'] = resource['service_path']
-
+        if resource.get('tenant', '') != '':
+            headers['FIWARE-Service'] = resource['tenant']
+        if resource.get('service_path', '') != '':
+            headers['FIWARE-ServicePath'] = resource['service_path']
 
         url = resource['url']
-        parts = urlparse.urlsplit(url)
-
-
-	if resource['format'] == 'ngsi-h':
-	    if 'tenant' not in resource or len(resource['tenant']) == 0:
-                details = 'Please complete the tenant field.'
-                base.abort(409, detail=details)
-            if 'service_path' not in resource or len(resource['service_path']) == 0:
-                details = 'Please complete the service path field.'
-                base.abort(409, detail=details)
-
-	    lastN = url.lower().find('lastn')
-            hLimit = url.lower().find('hlimit')
-            hOffset = url.lower().find('hoffset')
-
-	    if lastN == -1 and (hLimit == -1 or hOffset == -1):
-                details = 'if no lastN is provided hLimit and hOffset are mandatory parameters.'
-                base.abort(409, detail=details)
-
-
-        if not parts.scheme or not parts.netloc:
+        try:
+            parsedurl = urlparse.urlsplit(url)
+        except:
             base.abort(409, detail='Invalid URL.')
 
-        if url.lower().find('/querycontext') != -1:
-            if 'payload' in resource:
-                resource['payload'] = resource['payload'].replace("'", '"')
-                resource['payload'] = resource['payload'].replace(" ", "")
-            else:
-                details = 'Please add a  payload to complete the query.'
+        if not parsedurl.scheme or not parsedurl.netloc:
+            base.abort(409, detail='Invalid URL.')
+
+        if parsedurl.path.find('/v1/queryContext') != -1:
+            if resource.get("payload", "").strip() == "":
+                details = 'Please add a payload to complete the query.'
                 base.abort(409, detail=details)
 
-            payload = json.dumps(json.loads(resource['payload']))
-            r = requests.post(url, headers=headers, data=payload, stream=True)
+            try:
+                json.loads(resource['payload'])
+            except:
+                details = "Payload field doesn't contain valid JSON data."
+                base.abort(409, detail=details)
+
+            headers['Content-Type'] = "application/json"
+            r = requests.post(url, headers=headers, data=resource["payload"], stream=True)
 
         else:
             r = requests.get(url, headers=headers, stream=True)
 
         if r.status_code == 401:
-	    if 'oauth_req' in resource and resource['oauth_req'] == 'true':
+            if 'oauth_req' in resource and resource['oauth_req'] == 'true':
                 details = 'ERROR 401 token expired. Retrieving new token, reload please.'
                 log.info(details)
                 base.abort(409, detail=details)
@@ -106,14 +94,17 @@ def proxy_ngsi_resource(context, data_dict):
             base.response.content_type = r.headers['content-type']
             base.response.charset = r.encoding
 
+        cl = r.headers.get('content-length')
+        if cl is None:
+            base.abort(409, 'This proxy did not support chunked responses')
 
-        length = 0
+        if int(cl) > MAX_FILE_SIZE:
+            base.abort(409, '''Content is too large to be proxied. Allowed
+                file size: {allowed}, Content-Length: {actual}.'''.format(
+                allowed=MAX_FILE_SIZE, actual=cl))
+
         for chunk in r.iter_content(chunk_size=CHUNK_SIZE):
             base.response.body_file.write(chunk)
-            length += len(chunk)
-            if length >= MAX_FILE_SIZE:
-                details = 'Content is too large to be proxied. Complete the Context Broker query with pagination parameters to resolve this issue.'
-                base.abort(409, headers={'content-encoding': ''}, detail=details)
 
     except ValueError:
         details = ''
@@ -130,8 +121,8 @@ def proxy_ngsi_resource(context, data_dict):
 
 
 class ProxyNGSIController(base.BaseController):
+
     def proxy_ngsi_resource(self, resource_id):
         data_dict = {'resource_id': resource_id}
         context = {'model': base.model, 'session': base.model.Session, 'user': base.c.user or base.c.author}
         return proxy_ngsi_resource(context, data_dict)
-

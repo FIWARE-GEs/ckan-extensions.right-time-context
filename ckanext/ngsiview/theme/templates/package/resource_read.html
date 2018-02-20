@@ -9,13 +9,13 @@
       <li>
         <a class="btn btn-primary resource-url-analytics resource-type-{{ res.resource_type }}" href="{{ res.url }}">
           {% if res.resource_type in ('listing', 'service') %}
-            <i class="icon-eye-open"></i> {{ _('View') }}
+            <i class="icon-eye-open fa fa-eye"></i> {{ _('View') }}
           {% elif  res.resource_type == 'api' %}
-            <i class="icon-key"></i> {{ _('API Endpoint') }}
+            <i class="icon-key fa fa-key"></i> {{ _('API Endpoint') }}
           {% elif not res.has_views or not res.can_be_previewed %}
-            <i class="icon-external-link"></i> {{ _('Go to resource') }}
+            <i class="icon-external-link fa fa-external-link"></i> {{ _('Go to resource') }}
           {% else %}
-            <i class="icon-download"></i> {{ _('Download') }}
+            <i class="icon-download fa fa-download"></i> {{ _('Download') }}
           {% endif %}
         </a>
       </li>
@@ -27,18 +27,16 @@
 {% endblock %}
 
 
-  {% block resource_read_url %}
-    {% if res.url and h.is_url(res.url) %}
-      {% if res.url.lower().find('/querycontext')!= -1 or res.url.lower().find('/contextentities')!= -1 %}
-        <p class="muted ellipsis">{{ _('CB QUERY:') }} {{ _(res.url)}}</p>
-      {% else %}
-        <p class="muted ellipsis">{{ _('URL:') }} <a href="{{ res.url }}" title="{{ res.url }}">{{ res.url }}</a></p>
+{% block resource_read_url %}
+    {% if res.format == "fiware-ngsi" %}
+      <p class="muted ellipsis"><b>{{ _('URL:') }}</b> {{ _(res.url)}}</p>
+      {% if res.tenant %}
+          <p class="muted ellipsis"><b>{{ _('Tenant:') }}</b> {{ _(res.tenant)}}</p>
       {% endif %}
-    {% elif res.url %}
-      {% if res.url.lower().find('/querycontext')!= -1 or res.url.lower().find('/contextentities')!= -1 %}
-        <p class="muted ellipsis">{{ _('CB QUERY:') }} {{ _(res.url)}}</p>
-      {% else %}
-        <p class="muted ellipsis">{{ _('URL:') }} {{ res.url }}</p>
+      {% if res.service_path %}
+          <p class="muted ellipsis"><b>{{ _('Service Path:') }}</b> {{ _(res.service_path)}}</p>
       {% endif %}
+    {% else %}
+      <p class="muted ellipsis"><b>{{ _('URL:') }}</b> <a href="{{ res.url }}" title="{{ res.url }}">{{ res.url }}</a></p>
     {% endif %}
-  {% endblock %}
+{% endblock %}
