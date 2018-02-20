@@ -16,4 +16,4 @@ script:
 after_success: coveralls
 branches:
   only:
-    - ngsiv2
+    - master
