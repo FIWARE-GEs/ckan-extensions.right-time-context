@@ -18,6 +18,7 @@
 
 from logging import getLogger
 import urlparse
+from pylons import config
 import requests
 import json
 import ckan.logic as logic
@@ -35,6 +36,7 @@ def proxy_ngsi_resource(context, data_dict):
     resource_id = data_dict['resource_id']
     log.info('Proxify resource {id}'.format(id=resource_id))
     resource = logic.get_action('resource_show')(context, {'id': resource_id})
+    verify = config.get('ckan.ngsi.verify_requests', False)
 
     try:
         if 'oauth_req' in resource and resource['oauth_req'] == 'true':
@@ -84,10 +86,10 @@ def proxy_ngsi_resource(context, data_dict):
                 base.abort(409, detail=details)
 
             payload = json.dumps(json.loads(resource['payload']))
-            r = requests.post(url, headers=headers, data=payload, stream=True)
+            r = requests.post(url, headers=headers, data=payload, stream=True, verify=verify)
 
         else:
-            r = requests.get(url, headers=headers, stream=True)
+            r = requests.get(url, headers=headers, stream=True, verify=verify)
 
         if r.status_code == 401:
 	    if 'oauth_req' in resource and resource['oauth_req'] == 'true':
