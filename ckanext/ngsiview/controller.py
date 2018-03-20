@@ -27,7 +27,6 @@ import ckan.plugins as p
 
 log = getLogger(__name__)
 
-MAX_FILE_SIZE = 1024 * 1024  # 1MB
 CHUNK_SIZE = 512
 
 
@@ -95,15 +94,6 @@ def proxy_ngsi_resource(context, data_dict):
             r.raise_for_status()
             base.response.content_type = r.headers['content-type']
             base.response.charset = r.encoding
-
-        cl = r.headers.get('content-length')
-        if cl is None:
-            base.abort(409, 'This proxy did not support chunked responses')
-
-        if int(cl) > MAX_FILE_SIZE:
-            base.abort(409, '''Content is too large to be proxied. Allowed
-                file size: {allowed}, Content-Length: {actual}.'''.format(
-                allowed=MAX_FILE_SIZE, actual=cl))
 
         for chunk in r.iter_content(chunk_size=CHUNK_SIZE):
             base.response.body_file.write(chunk)
