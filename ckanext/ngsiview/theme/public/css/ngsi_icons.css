@@ -77,35 +77,14 @@
   height: 35px;
   background-position: -320px -62px;
 }
-.format-label[data-format=ngsi9],
-.format-label[data-format*=ngsi9] {
-  width: 32px;
-  height: 35px;
-  background-position: -352px -62px;
-}
-.format-label[data-format=ngsi10],
-.format-label[data-format*=ngsi10] {
+.format-label[data-format=fiware-ngsi],
+.format-label[data-format*=fiware-ngsi] {
   width: 32px;
   height: 35px;
   background-position: -384px -62px;
 }
-.format-label[data-format=ngsi-h],
-.format-label[data-format*=ngsi-h] {
-  width: 32px;
-  height: 35px;
-  background-position: -416px -62px;
-}
 
-
-.label[data-format="ngsi9"], 
-.label[data-format*="ngsi9"] {
-    background-color: #66FF66;
-}
-.label[data-format="ngsi10"],
-.label[data-format*="ngsi10"] {
+.label[data-format="fiware-ngsi"],
+.label[data-format*="fiware-ngsi"] {
     background-color: #65C3D1;
-}
-.label[data-format="ngsi-h"],
-.label[data-format*="ngsi-h"] {
-    background-color: #FA8258;
 }
