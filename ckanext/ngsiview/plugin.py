@@ -43,11 +43,7 @@ class NgsiView(p.SingletonPlugin):
     p.implements(p.IRoutes, inherit=True)
     p.implements(p.IConfigurer, inherit=True)
     p.implements(p.IConfigurable, inherit=True)
-
-    if p.toolkit.check_ckan_version(min_version='2.3'):
-        p.implements(p.IResourceView, inherit=True)
-    else:
-        p.implements(p.IResourcePreview, inherit=True)
+    p.implements(p.IResourceView, inherit=True)
 
     def before_map(self, m):
         m.connect(
@@ -66,17 +62,6 @@ class NgsiView(p.SingletonPlugin):
         )
         log.info('Proxified url is {0}'.format(url))
         return url
-
-    def update_config(self, config):
-        # This function is only maintained to allow proper functioning of the extension
-        # in ckan versions previous to ckan2.3
-        p.toolkit.add_resource('theme/public', 'ckanext-ngsiview')
-        p.toolkit.add_public_directory(config, 'theme/public')
-
-        if p.toolkit.check_ckan_version(min_version='2.3'):
-            p.toolkit.add_template_directory(config, 'theme/templates')
-        else:
-            p.toolkit.add_template_directory(config, 'theme/templates/old_templates')
 
     def configure(self, config):
         self.proxy_is_enabled = config.get('ckan.resource_proxy_enabled')
@@ -105,96 +90,54 @@ class NgsiView(p.SingletonPlugin):
         else:
             return False
 
-    def can_preview(self, data_dict):
-        # This function is only maintained to allow proper functioning of the extension
-        # in ckan versions previous to ckan2.3
+    def setup_template_variables(self, context, data_dict):
         resource = data_dict['resource']
+        proxy_enabled = p.plugin_loaded('resource_proxy')
+        oauth2_enabled = p.plugin_loaded('oauth2')
+        same_domain = datapreview.on_same_domain(data_dict)
+
         if 'oauth_req' not in resource:
             oauth_req = 'false'
         else:
             oauth_req = resource['oauth_req']
 
-        format_lower = resource['format'].lower()
-        if format_lower in self.NGSI_FORMATS:
-            if self.proxy_is_enabled and not resource['on_same_domain'] and check_query(resource):
-                if oauth_req == 'true' and not p.toolkit.c.user:
-                    details = "In order to see this resource properly, you need to be logged in"
-                    h.flash_error(details, allow_html=False)
-                    return {'can_preview': False, 'fixable': details, 'quality': 2}
-                elif oauth_req == 'true' and not self.oauth2_is_enabled:
-                    details = "Enable oauth2 extension"
-                    h.flash_error(details, allow_html=False)
-                    return {'can_preview': False, 'fixable': details, 'quality': 2}
-                elif resource['url'].lower().find('/querycontext') != -1 and 'payload' not in resource:
-                    details = "Add a payload to complete the query"
-                    h.flash_error(details, allow_html=False)
-                    return {'can_preview': False, 'fixable': details, 'quality': 2}
-                else:
-                    return {'can_preview': True, 'quality': 2}
-            else:
-                return {'can_preview': False}
+        url = resource['url']
+        if not check_query(resource):
+            details = "</br></br>This is not a ContextBroker query, please check <a href='https://forge.fiware.org/plugins/mediawiki/wiki/fiware/index.php/Publish/Subscribe_Broker_-_Orion_Context_Broker_-_User_and_Programmers_Guide'>Orion Context Broker documentation</a></br></br></br>"
+            f_details = "This is not a ContextBroker query, please check Orion Context Broker documentation."
+            h.flash_error(f_details, allow_html=False)
+            view_enable = [False, details]
+        elif not same_domain and not proxy_enabled:
+            details = "</br></br>Enable resource_proxy</br></br></br>"
+            f_details = "Enable resource_proxy."
+            h.flash_error(f_details, allow_html=False)
+            view_enable = [False, details]
+            url = ''
         else:
-            return {'can_preview': False}
+            if not same_domain:
+                url = self.get_proxified_ngsi_url(data_dict)
 
-    def setup_template_variables(self, context, data_dict):
-        if p.toolkit.check_ckan_version(min_version='2.3'):
-            resource = data_dict['resource']
-            proxy_enabled = p.plugin_loaded('resource_proxy')
-            oauth2_enabled = p.plugin_loaded('oauth2')
-            same_domain = datapreview.on_same_domain(data_dict)
-
-            if 'oauth_req' not in resource:
-                oauth_req = 'false'
-            else:
-                oauth_req = resource['oauth_req']
-
-            url = resource['url']
-            if not check_query(resource):
-                details = "</br></br>This is not a ContextBroker query, please check <a href='https://forge.fiware.org/plugins/mediawiki/wiki/fiware/index.php/Publish/Subscribe_Broker_-_Orion_Context_Broker_-_User_and_Programmers_Guide'>Orion Context Broker documentation</a></br></br></br>"
-                f_details = "This is not a ContextBroker query, please check Orion Context Broker documentation."
+            if oauth_req == 'true' and not p.toolkit.c.user:
+                details = "</br></br>In order to see this resource properly, you need to be logged in.</br></br></br>"
+                f_details = "In order to see this resource properly, you need to be logged in."
                 h.flash_error(f_details, allow_html=False)
                 view_enable = [False, details]
-            elif not same_domain and not proxy_enabled:
-                details = "</br></br>Enable resource_proxy</br></br></br>"
-                f_details = "Enable resource_proxy."
+
+            elif oauth_req == 'true' and not oauth2_enabled:
+                details = "</br></br>In order to see this resource properly, enable oauth2 extension</br></br></br>"
+                f_details = "In order to see this resource properly, enable oauth2 extension."
                 h.flash_error(f_details, allow_html=False)
                 view_enable = [False, details]
-                url = ''
+
             else:
-                if not same_domain:
-                    url = self.get_proxified_ngsi_url(data_dict)
+                data_dict['resource']['url'] = url
+                view_enable = [True, 'OK']
 
-                if oauth_req == 'true' and not p.toolkit.c.user:
-                    details = "</br></br>In order to see this resource properly, you need to be logged in.</br></br></br>"
-                    f_details = "In order to see this resource properly, you need to be logged in."
-                    h.flash_error(f_details, allow_html=False)
-                    view_enable = [False, details]
-
-                elif oauth_req == 'true' and not oauth2_enabled:
-                    details = "</br></br>In order to see this resource properly, enable oauth2 extension</br></br></br>"
-                    f_details = "In order to see this resource properly, enable oauth2 extension."
-                    h.flash_error(f_details, allow_html=False)
-                    view_enable = [False, details]
-
-                else:
-                    data_dict['resource']['url'] = url
-                    view_enable = [True, 'OK']
-
-            return {
-                'resource_json': json.dumps(data_dict['resource']),
-                'resource_url': json.dumps(url),
-                'view_enable': json.dumps(view_enable)
-            }
-        else:
-            if self.proxy_is_enabled and not data_dict['resource']['on_same_domain']:
-                if check_query(data_dict['resource']):
-                    url = self.get_proxified_ngsi_url(data_dict)
-                    p.toolkit.c.resource['url'] = url
+        return {
+            'resource_json': json.dumps(data_dict['resource']),
+            'resource_url': json.dumps(url),
+            'view_enable': json.dumps(view_enable)
+        }
 
     def view_template(self, context, data_dict):
-        return 'ngsi.html'
-
-    def preview_template(self, context, data_dict):
-        # This function is only maintained to allow proper functioning of the extension
-        # in ckan versions previous to ckan2.3
         return 'ngsi.html'
