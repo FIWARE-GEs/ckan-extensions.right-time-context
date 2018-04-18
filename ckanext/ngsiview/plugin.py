@@ -1,5 +1,8 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 # Copyright 2015 Telefonica Investigacion y Desarrollo, S.A.U
+# Copyright 2018 CoNWeT Lab, Universidad Politécnica de Madrid
 #
 # This file is part of ckanext-ngsipreview.
 #
@@ -66,6 +69,9 @@ class NgsiView(p.SingletonPlugin):
     def configure(self, config):
         self.proxy_is_enabled = config.get('ckan.resource_proxy_enabled')
         self.oauth2_is_enabled = config.get('ckan.plugins').find('oauth2') != -1
+
+    def update_config(self, config):
+        p.toolkit.add_template_directory(config, 'templates')
 
     def info(self):
         return {'name': 'ngsiview',
