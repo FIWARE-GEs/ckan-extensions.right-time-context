@@ -72,6 +72,8 @@ class NgsiView(p.SingletonPlugin):
 
     def update_config(self, config):
         p.toolkit.add_template_directory(config, 'templates')
+        p.toolkit.add_resource('fanstatic', 'ngsiview')
+        p.toolkit.add_public_directory(config, 'public')
 
     def info(self):
         return {'name': 'ngsiview',
