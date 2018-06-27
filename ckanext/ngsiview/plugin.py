@@ -17,7 +17,7 @@
 # General Public License for more details.
 #
 # You should have received a copy of the GNU Affero General Public License
-# along with Orion Context Broker. If not, see http://www.gnu.org/licenses/.
+# along with CKAN NGSI View extension. If not, see http://www.gnu.org/licenses/.
 
 import logging
 
@@ -34,6 +34,7 @@ except ImportError:
 
 
 NGSI_FORMAT = 'fiware-ngsi'
+NGSI_REG_FORMAT = 'fiware-ngsi-registry'
 
 
 def check_query(resource):
@@ -47,6 +48,7 @@ class NgsiView(p.SingletonPlugin):
     p.implements(p.IConfigurer, inherit=True)
     p.implements(p.IConfigurable, inherit=True)
     p.implements(p.IResourceView, inherit=True)
+    p.implements(p.IResourceController, inherit=True)
 
     def before_map(self, m):
         m.connect(
@@ -149,3 +151,75 @@ class NgsiView(p.SingletonPlugin):
 
     def view_template(self, context, data_dict):
         return 'ngsi.html'
+
+    def before_create(self, context, resource):
+        # Check if NGSI resource is being created
+        serialized_resource = resource
+        if resource['format'] == NGSI_REG_FORMAT:
+
+            if 'entity' not in resource or not len(resource['entity']):
+                # Raise an error, al least one entity must be provided
+                raise p.toolkit.ValidationError({'NGSI Data': ['At least one NGSI entity must be provided']})
+
+            index = 0
+
+            # Serialize entity information to support custom field saving
+            entities = {}
+            for entity in resource['entity']:
+                prefix = 'entity__' + str(index) + '__'
+                entities[prefix + 'id'] = entity['id']
+                entities[prefix + 'value'] = entity['value']
+
+                # Check if there is an isPattern field
+                if 'isPattern' in entity and entity['isPattern'] == 'on':
+                    entities[prefix + 'isPattern'] = entity['isPattern']
+                index = index + 1
+
+            del serialized_resource['entity']
+            serialized_resource.update(entities)
+
+        return serialized_resource
+    
+    def after_create(self, context, resource):
+        # Create entry in the NGSI registry
+        pass
+
+    def before_update(self, context, resource):
+        # Serialize updated information
+        pass
+
+    def after_update(self, context, resource):
+        pass
+
+    # TODO: Manage deletions
+
+    def before_show(self, resource):
+        pending_entities = True
+        index = 0
+
+        # Deserialize resource information
+        entities = []
+        while pending_entities:
+            prefix = 'entity__' + str(index) + '__'
+
+            if prefix + 'id' in resource:
+                entity = {
+                    'id': resource[prefix + 'id'],
+                    'value': resource[prefix + 'value'],
+                }
+
+                if prefix + 'isPattern' in resource:
+                    entity['isPattern'] = resource[prefix + 'isPattern']
+                    del resource[prefix + 'isPattern']
+
+                entities.append(entity)
+                index = index + 1
+
+                del resource[prefix + 'id']
+                del resource[prefix + 'value']
+            else:
+                pending_entities = False
+
+        resource['entity'] = entities
+
+        return resource

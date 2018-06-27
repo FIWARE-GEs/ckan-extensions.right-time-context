@@ -1,5 +1,8 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 # Copyright 2015 Telefonica Investigacion y Desarrollo, S.A.U
+# Copyright 2018 CoNWeT Lab. Univerisdad Politécnica de Madrid
 #
 # This file is part of ckanext-ngsipreview.
 #
