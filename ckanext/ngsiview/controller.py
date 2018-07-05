@@ -22,7 +22,7 @@ import urlparse
 
 import ckan.logic as logic
 import ckan.lib.base as base
-import ckan.plugins as p
+from ckan.plugins import toolkit
 from pylons import config
 import requests
 
@@ -35,10 +35,8 @@ class ProxyNGSIController(base.BaseController):
 
     def proxy_ngsi_resource(self, resource_id):
         # Chunked proxy for ngsi resources.
-        data_dict = {'resource_id': resource_id}
         context = {'model': base.model, 'session': base.model.Session, 'user': base.c.user or base.c.author}
 
-        resource_id = data_dict['resource_id']
         log.info('Proxify resource {id}'.format(id=resource_id))
         resource = logic.get_action('resource_show')(context, {'id': resource_id})
         verify = config.get('ckan.ngsi.verify_requests', True)
@@ -49,8 +47,8 @@ class ProxyNGSIController(base.BaseController):
                 'Accept': 'application/json'
             }
 
-            if 'oauth_req' in resource and resource['oauth_req'] == 'true':
-                token = p.toolkit.c.usertoken['access_token']
+            if resource.get('oauth_req', 'false') == 'true':
+                token = toolkit.c.usertoken['access_token']
                 headers['X-Auth-Token'] = token
 
             if resource.get('tenant', '') != '':
@@ -89,7 +87,7 @@ class ProxyNGSIController(base.BaseController):
                     details = 'ERROR 401 token expired. Retrieving new token, reload please.'
                     log.info(details)
                     base.abort(409, detail=details)
-                    p.toolkit.c.usertoken_refresh()
+                    toolkit.c.usertoken_refresh()
 
                 elif 'oauth_req' not in resource or resource['oauth_req'] == 'false':
                     details = 'This query may need Oauth-token, please check if the token field on resource_edit is correct.'
