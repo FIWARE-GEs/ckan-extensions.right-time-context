@@ -6,7 +6,7 @@ CKAN ckanext-ngsiview
 
 CKAN extension that will give you the ability to manage real-time resources provided by a FIWARE Context Broker. This extension also provides a basic view to provide a data preview to user browsing context broker resources, altough it can be combined with other plugins (e.g. the [`ckanext-wirecloud_view`](https://github.com/conwetlab/ckanext-wirecloud_view.git) one) to provide a more advanced visualization of the data provided using CKAN.
 
-**Note**: This extension is being tested in CKAN 2.5, 2.6 and 2.7. These are
+**Note**: This extension is being tested using CKAN 2.5, 2.6, 2.7 and 2.8. These are
 therefore considered as the supported versions
 
 
