@@ -57,12 +57,9 @@ class ProxyNGSIController(base.BaseController):
                 headers['FIWARE-ServicePath'] = resource['service_path']
 
             url = resource['url']
-            try:
-                parsedurl = urlparse.urlsplit(url)
-            except ValueError:
-                base.abort(409, detail='Invalid URL.')
+            parsedurl = urlparse.urlsplit(url)
 
-            if not parsedurl.scheme or not parsedurl.netloc:
+            if parsedurl.scheme not in ("http", "https") or not parsedurl.netloc:
                 base.abort(409, detail='Invalid URL.')
 
             if parsedurl.path.find('/v1/queryContext') != -1:

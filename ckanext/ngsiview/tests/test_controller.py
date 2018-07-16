@@ -19,7 +19,7 @@
 
 import unittest
 
-from mock import DEFAULT, patch
+from mock import ANY, DEFAULT, patch
 from parameterized import parameterized
 
 from ckanext.ngsiview.controller import ProxyNGSIController
@@ -62,3 +62,24 @@ class NgsiViewControllerTestCase(unittest.TestCase):
 
         requests.get.assert_called_with(resource['url'], headers=expected_headers, stream=True, verify=True)
         base.response.body_file.write.assert_called_with(body)
+
+    @parameterized.expand([
+        ("",),
+        ("relative/url",),
+        ("http://#a",),
+        ("ftp://example.com",),
+        ("tatata:///da",),
+    ])
+    @patch.multiple("ckanext.ngsiview.controller", base=DEFAULT, logic=DEFAULT, requests=DEFAULT, toolkit=DEFAULT)
+    def test_invalid_url_request(self, url, base, logic, requests, toolkit):
+        resource = {
+            'url': url,
+        }
+        logic.get_action('resource_show').return_value = resource
+        base.abort.side_effect = TypeError
+
+        with self.assertRaises(TypeError):
+            self.controller.proxy_ngsi_resource("resource_id")
+
+        base.abort.assert_called_with(409, detail=ANY)
+        requests.get.assert_not_called()
