@@ -97,7 +97,7 @@ class ProxyNGSIController(base.BaseController):
                 base.abort(409, detail=details)
 
             elif 'oauth_req' not in resource or resource['oauth_req'] == 'false':
-                details = 'Authentication requested by server, please check resourece configuration.'
+                details = 'Authentication requested by server, please check resource configuration.'
                 log.info(details)
                 base.abort(409, detail=details)
 
