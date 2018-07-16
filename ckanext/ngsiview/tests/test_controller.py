@@ -109,3 +109,24 @@ class NgsiViewControllerTestCase(unittest.TestCase):
             toolkit.c.usertoken_refresh.assert_called_with()
         else:
             toolkit.c.usertoken_refresh.assert_not_called()
+
+    @parameterized.expand([
+        ("HTTPError", 409),
+        ("ConnectionError", 502),
+        ("Timeout", 504),
+    ])
+    @patch.multiple("ckanext.ngsiview.controller", base=DEFAULT, logic=DEFAULT, requests=DEFAULT, toolkit=DEFAULT)
+    def test_auth_required_request(self, exception, status_code, base, logic, requests, toolkit):
+        resource = {
+            'url': "http://cb.example.org/v2/entites",
+        }
+        logic.get_action('resource_show').return_value = resource
+        setattr(requests, exception, ValueError)
+        requests.get.side_effect = getattr(requests, exception)
+        base.abort.side_effect = TypeError
+
+        with self.assertRaises(TypeError):
+            self.controller.proxy_ngsi_resource("resource_id")
+
+        base.abort.assert_called_once_with(status_code, detail=ANY)
+        requests.get.assert_called_once_with(resource['url'], headers=ANY, stream=True, verify=True)

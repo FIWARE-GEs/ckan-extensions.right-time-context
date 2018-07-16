@@ -42,27 +42,26 @@ class ProxyNGSIController(base.BaseController):
         resource = logic.get_action('resource_show')(context, {'id': resource_id})
         verify = config.get('ckan.ngsi.verify_requests', True)
 
+        headers = {
+            'Accept': 'application/json'
+        }
+
+        if resource.get('oauth_req', 'false') == 'true':
+            token = toolkit.c.usertoken['access_token']
+            headers['X-Auth-Token'] = token
+
+        if resource.get('tenant', '') != '':
+            headers['FIWARE-Service'] = resource['tenant']
+        if resource.get('service_path', '') != '':
+            headers['FIWARE-ServicePath'] = resource['service_path']
+
+        url = resource['url']
+        parsedurl = urlparse.urlsplit(url)
+
+        if parsedurl.scheme not in ("http", "https") or not parsedurl.netloc:
+            base.abort(409, detail='Invalid URL.')
+
         try:
-
-            headers = {
-                'Accept': 'application/json'
-            }
-
-            if resource.get('oauth_req', 'false') == 'true':
-                token = toolkit.c.usertoken['access_token']
-                headers['X-Auth-Token'] = token
-
-            if resource.get('tenant', '') != '':
-                headers['FIWARE-Service'] = resource['tenant']
-            if resource.get('service_path', '') != '':
-                headers['FIWARE-ServicePath'] = resource['service_path']
-
-            url = resource['url']
-            parsedurl = urlparse.urlsplit(url)
-
-            if parsedurl.scheme not in ("http", "https") or not parsedurl.netloc:
-                base.abort(409, detail='Invalid URL.')
-
             if parsedurl.path.find('/v1/queryContext') != -1:
                 if resource.get("payload", "").strip() == "":
                     details = 'Please add a payload to complete the query.'
@@ -79,30 +78,6 @@ class ProxyNGSIController(base.BaseController):
 
             else:
                 r = requests.get(url, headers=headers, stream=True, verify=verify)
-
-            if r.status_code == 401:
-                if 'oauth_req' in resource and resource['oauth_req'] == 'true':
-                    details = 'ERROR 401 token expired. Retrieving new token, reload please.'
-                    log.info(details)
-                    toolkit.c.usertoken_refresh()
-                    base.abort(409, detail=details)
-
-                elif 'oauth_req' not in resource or resource['oauth_req'] == 'false':
-                    details = 'Authentication requested by server, please check resourece configuration.'
-                    log.info(details)
-                    base.abort(409, detail=details)
-
-            else:
-                r.raise_for_status()
-                base.response.content_type = r.headers['content-type']
-                base.response.charset = r.encoding
-
-            for chunk in r.iter_content(chunk_size=CHUNK_SIZE):
-                base.response.body_file.write(chunk)
-
-        except ValueError:
-            details = ''
-            base.abort(409, detail=details)
         except requests.HTTPError:
             details = 'Could not proxy ngsi_resource. We are working to resolve this issue as quickly as possible'
             base.abort(409, detail=details)
@@ -112,3 +87,24 @@ class ProxyNGSIController(base.BaseController):
         except requests.Timeout:
             details = 'Could not proxy ngsi_resource because the connection timed out.'
             base.abort(504, detail=details)
+
+
+        if r.status_code == 401:
+            if 'oauth_req' in resource and resource['oauth_req'] == 'true':
+                details = 'ERROR 401 token expired. Retrieving new token, reload please.'
+                log.info(details)
+                toolkit.c.usertoken_refresh()
+                base.abort(409, detail=details)
+
+            elif 'oauth_req' not in resource or resource['oauth_req'] == 'false':
+                details = 'Authentication requested by server, please check resourece configuration.'
+                log.info(details)
+                base.abort(409, detail=details)
+
+        else:
+            r.raise_for_status()
+            base.response.content_type = r.headers['content-type']
+            base.response.charset = r.encoding
+
+        for chunk in r.iter_content(chunk_size=CHUNK_SIZE):
+            base.response.body_file.write(chunk)
