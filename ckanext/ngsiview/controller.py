@@ -130,43 +130,49 @@ class ProxyNGSIController(base.BaseController):
         if resource.get('service_path', '') != '':
             headers['FIWARE-ServicePath'] = resource['service_path']
 
+        url = resource['url']
+        parsed_url = urlparse.urlsplit(url)
+
+        if parsedurl.scheme not in ("http", "https") or not parsedurl.netloc:
+            base.abort(409, detail='Invalid URL.')
+
         try:
-            url = resource['url']
-            try:
-                parsed_url = urlparse.urlsplit(url)
-            except:
-                base.abort(409, detail='Invalid URL.')
-
-            if not parsed_url.scheme or not parsed_url.netloc:
-                base.abort(409, detail='Invalid URL.')
-
             if resource['format'].lower() == NGSI_REG_FORMAT:
                 r = self._proxy_registration_resource(resource, parsed_url, headers)
             else:
                 r = self._proxy_query_resource(resource, parsed_url, headers)
+        except requests.HTTPError:
+            details = 'Could not proxy ngsi_resource. We are working to resolve this issue as quickly as possible'
+            base.abort(409, detail=details)
+        except requests.ConnectionError:
+            details = 'Could not proxy ngsi_resource because a connection error occurred.'
+            base.abort(502, detail=details)
+        except requests.Timeout:
+            details = 'Could not proxy ngsi_resource because the connection timed out.'
+            base.abort(504, detail=details)
 
-            if r.status_code == 401:
-                if 'oauth_req' in resource and resource['oauth_req'] == 'true':
-                    details = 'ERROR 401 token expired. Retrieving new token, reload please.'
-                    log.info(details)
-                    toolkit.c.usertoken_refresh()
-                    base.abort(409, detail=details)
-
-                elif 'oauth_req' not in resource or resource['oauth_req'] == 'false':
-                    details = 'Authentication requested by server, please check resource configuration.'
-                    log.info(details)
-                    base.abort(409, detail=details)
-
-            elif r.status_code == 400:
-                response = r.json()
-                details = response['description']
+        if r.status_code == 401:
+            if 'oauth_req' in resource and resource['oauth_req'] == 'true':
+                details = 'ERROR 401 token expired. Retrieving new token, reload please.'
                 log.info(details)
-                base.abort(422, detail=details)
+                toolkit.c.usertoken_refresh()
+                base.abort(409, detail=details)
 
-            else:
-                r.raise_for_status()
-                base.response.content_type = r.headers['content-type']
-                base.response.charset = r.encoding
+            elif 'oauth_req' not in resource or resource['oauth_req'] == 'false':
+                details = 'Authentication requested by server, please check resource configuration.'
+                log.info(details)
+                base.abort(409, detail=details)
 
-            for chunk in r.iter_content(chunk_size=CHUNK_SIZE):
-                base.response.body_file.write(chunk)
+        elif r.status_code == 400:
+            response = r.json()
+            details = response['description']
+            log.info(details)
+            base.abort(422, detail=details)
+
+        else:
+            r.raise_for_status()
+            base.response.content_type = r.headers['content-type']
+            base.response.charset = r.encoding
+
+        for chunk in r.iter_content(chunk_size=CHUNK_SIZE):
+            base.response.body_file.write(chunk)
