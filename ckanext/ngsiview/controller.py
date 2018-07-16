@@ -28,9 +28,83 @@ import ckan.logic as logic
 import ckan.lib.base as base
 import ckan.plugins as p
 
+from .plugin import NGSI_REG_FORMAT
+
 log = getLogger(__name__)
 
 CHUNK_SIZE = 512
+
+
+def proxy_query_resource(resource, parsed_url, headers):
+    verify = config.get('ckan.ngsi.verify_requests', True)
+
+    if parsed_url.path.find('/v1/queryContext') != -1:
+        if resource.get("payload", "").strip() == "":
+            details = 'Please add a payload to complete the query.'
+            base.abort(409, detail=details)
+
+        try:
+            json.loads(resource['payload'])
+        except:
+            details = "Payload field doesn't contain valid JSON data."
+            base.abort(409, detail=details)
+
+        headers['Content-Type'] = "application/json"
+        r = requests.post(resource['url'], headers=headers, data=resource["payload"], stream=True, verify=verify)
+
+    else:
+        r = requests.get(resource['url'], headers=headers, stream=True, verify=verify)
+
+    return r
+
+
+def proxy_registration_resource(resource, parsed_url, headers):
+    verify = config.get('ckan.ngsi.verify_requests', True)
+    path = parsed_url.path
+
+    if path.endswith('/'):
+        path = path[:-1]
+
+    path = path + '/v2/op/query'
+    body = {
+        'entities': [],
+        'attrs': resource['attrs_str'].split(',')
+    }
+
+    # Include entity information
+    for entity in resource['entity']:
+        query_entity = {
+            'type': entity['value']
+        }
+        if 'isPattern' in entity and entity['isPattern'] == 'on':
+            query_entity['idPattern'] = entity['id']
+        else:
+            query_entity['id'] = entity['id']
+
+        body['entities'].append(query_entity)
+
+    # Parse expression to include georel information
+    if 'expression' in resource and len(resource['expression']):
+        # Separate expresion query strings
+        supported_expressions = ['georel', 'geometry', 'coords']
+        parsed_expression = resource['expression'].split('&')
+
+        expression = {}
+        for exp in parsed_expression:
+            parsed_exp = exp.split('=')
+
+            if len(parsed_exp) != 2 or not parsed_exp[0] in supported_expressions:
+                base.abort(422, detail='The expression is not a valid one for NGSI Registration, only georel, geometry, and coords is supported')
+            else:
+                expression[parsed_exp[0]] = parsed_exp[1]
+
+        body['expression'] = expression
+
+    headers['Content-Type'] = 'application/json'
+    url = urlparse.urljoin(parsed_url.scheme + '://' + parsed_url.netloc, path)
+    response = requests.post(url, headers=headers, json=body, stream=True, verify=verify)
+
+    return response
 
 
 def proxy_ngsi_resource(context, data_dict):
@@ -38,48 +112,34 @@ def proxy_ngsi_resource(context, data_dict):
     resource_id = data_dict['resource_id']
     log.info('Proxify resource {id}'.format(id=resource_id))
     resource = logic.get_action('resource_show')(context, {'id': resource_id})
-    verify = config.get('ckan.ngsi.verify_requests', True)
+
+    headers = {
+        'Accept': 'application/json'
+    }
+
+    if 'oauth_req' in resource and resource['oauth_req'] == 'true':
+        token = p.toolkit.c.usertoken['access_token']
+        headers['X-Auth-Token'] = token
+
+    if resource.get('tenant', '') != '':
+        headers['FIWARE-Service'] = resource['tenant']
+    if resource.get('service_path', '') != '':
+        headers['FIWARE-ServicePath'] = resource['service_path']
 
     try:
-
-        headers = {
-            'Accept': 'application/json'
-        }
-
-        if 'oauth_req' in resource and resource['oauth_req'] == 'true':
-            token = p.toolkit.c.usertoken['access_token']
-            headers['X-Auth-Token'] = token
-
-        if resource.get('tenant', '') != '':
-            headers['FIWARE-Service'] = resource['tenant']
-        if resource.get('service_path', '') != '':
-            headers['FIWARE-ServicePath'] = resource['service_path']
-
         url = resource['url']
         try:
-            parsedurl = urlparse.urlsplit(url)
+            parsed_url = urlparse.urlsplit(url)
         except:
             base.abort(409, detail='Invalid URL.')
 
-        if not parsedurl.scheme or not parsedurl.netloc:
+        if not parsed_url.scheme or not parsed_url.netloc:
             base.abort(409, detail='Invalid URL.')
 
-        if parsedurl.path.find('/v1/queryContext') != -1:
-            if resource.get("payload", "").strip() == "":
-                details = 'Please add a payload to complete the query.'
-                base.abort(409, detail=details)
-
-            try:
-                json.loads(resource['payload'])
-            except:
-                details = "Payload field doesn't contain valid JSON data."
-                base.abort(409, detail=details)
-
-            headers['Content-Type'] = "application/json"
-            r = requests.post(url, headers=headers, data=resource["payload"], stream=True, verify=verify)
-
+        if resource['format'].lower() == NGSI_REG_FORMAT:
+            r = proxy_registration_resource(resource, parsed_url, headers)
         else:
-            r = requests.get(url, headers=headers, stream=True, verify=verify)
+            r = proxy_query_resource(resource, parsed_url, headers)
 
         if r.status_code == 401:
             if 'oauth_req' in resource and resource['oauth_req'] == 'true':
@@ -92,6 +152,12 @@ def proxy_ngsi_resource(context, data_dict):
                 details = 'This query may need Oauth-token, please check if the token field on resource_edit is correct.'
                 log.info(details)
                 base.abort(409, detail=details)
+
+        elif r.status_code == 400:
+            response = r.json()
+            details = response['description']
+            log.info(details)
+            base.abort(422, detail=details)
 
         else:
             r.raise_for_status()
