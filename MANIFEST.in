@@ -1,0 +1,3 @@
+recursive-include ckanext/ngsiview/fanstatic *
+recursive-include ckanext/ngsiview/public *
+recursive-include ckanext/ngsiview/templates *
