@@ -95,7 +95,7 @@ class NgsiView(p.SingletonPlugin):
         proxy_enabled = p.plugin_loaded('resource_proxy')
         same_domain = datapreview.on_same_domain(data_dict)
 
-        if format_lower == NGSI_FORMAT and check_query(resource):
+        if (format_lower == NGSI_FORMAT and check_query(resource)) or format_lower == NGSI_REG_FORMAT:
             return same_domain or proxy_enabled
         else:
             return False
@@ -105,6 +105,7 @@ class NgsiView(p.SingletonPlugin):
         proxy_enabled = p.plugin_loaded('resource_proxy')
         oauth2_enabled = p.plugin_loaded('oauth2')
         same_domain = datapreview.on_same_domain(data_dict)
+        format_lower = resource.get('format', '').lower()
 
         if 'oauth_req' not in resource:
             oauth_req = 'false'
@@ -112,7 +113,7 @@ class NgsiView(p.SingletonPlugin):
             oauth_req = resource['oauth_req']
 
         url = resource['url']
-        if not check_query(resource):
+        if format_lower == NGSI_FORMAT and not check_query(resource):
             details = "</br></br>This is not a ContextBroker query, please check <a href='https://forge.fiware.org/plugins/mediawiki/wiki/fiware/index.php/Publish/Subscribe_Broker_-_Orion_Context_Broker_-_User_and_Programmers_Guide'>Orion Context Broker documentation</a></br></br></br>"
             f_details = "This is not a ContextBroker query, please check Orion Context Broker documentation."
             h.flash_error(f_details, allow_html=False)
