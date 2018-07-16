@@ -153,7 +153,19 @@ class NgsiView(p.SingletonPlugin):
     def view_template(self, context, data_dict):
         return 'ngsi.html'
 
-    def before_create(self, context, resource):
+    def _iterate_serialized(self, resource, handler):
+        pending_entities = True
+        index = 0
+        while pending_entities:
+            prefix = 'entity__' + str(index) + '__'
+
+            if prefix + 'id' in resource:
+                handler(prefix)
+                index = index + 1
+            else:
+                pending_entities = False
+
+    def _serialize_resource(self, resource):
         # Check if NGSI resource is being created
         serialized_resource = resource
         if resource['format'] == NGSI_REG_FORMAT:
@@ -162,11 +174,23 @@ class NgsiView(p.SingletonPlugin):
                 # Raise an error, al least one entity must be provided
                 raise p.toolkit.ValidationError({'NGSI Data': ['At least one NGSI entity must be provided']})
 
-            index = 0
+            # Remove all serialized entries from the resource
+            def remove_serialized(prefix):
+                del resource[prefix + 'id']
+                del resource[prefix + 'value']
 
+                if prefix + 'isPattern' in resource:
+                    del resource[prefix + 'isPattern']
+
+            self._iterate_serialized(resource, remove_serialized)
+
+            index = 0
             # Serialize entity information to support custom field saving
             entities = {}
             for entity in resource['entity']:
+                if 'delete' in entity and entity['delete'] == 'on':
+                    continue
+
                 prefix = 'entity__' + str(index) + '__'
                 entities[prefix + 'id'] = entity['id']
                 entities[prefix + 'value'] = entity['value']
@@ -180,46 +204,35 @@ class NgsiView(p.SingletonPlugin):
             serialized_resource.update(entities)
 
         return serialized_resource
+
+    def before_create(self, context, resource):
+        return self._serialize_resource(resource)
     
     def after_create(self, context, resource):
         # Create entry in the NGSI registry
         pass
 
-    def before_update(self, context, resource):
-        # Serialize updated information
-        pass
+    def before_update(self, context, current, resource):
+        return self._serialize_resource(resource)
 
     def after_update(self, context, resource):
         pass
 
-    # TODO: Manage deletions
-
     def before_show(self, resource):
-        pending_entities = True
-        index = 0
-
         # Deserialize resource information
         entities = []
-        while pending_entities:
-            prefix = 'entity__' + str(index) + '__'
+        def deserilize_handler(prefix):
+            entity = {
+                'id': resource[prefix + 'id'],
+                'value': resource[prefix + 'value'],
+            }
 
-            if prefix + 'id' in resource:
-                entity = {
-                    'id': resource[prefix + 'id'],
-                    'value': resource[prefix + 'value'],
-                }
+            if prefix + 'isPattern' in resource:
+                entity['isPattern'] = resource[prefix + 'isPattern']
 
-                if prefix + 'isPattern' in resource:
-                    entity['isPattern'] = resource[prefix + 'isPattern']
-                    del resource[prefix + 'isPattern']
+            entities.append(entity)
 
-                entities.append(entity)
-                index = index + 1
-
-                del resource[prefix + 'id']
-                del resource[prefix + 'value']
-            else:
-                pending_entities = False
+        self._iterate_serialized(resource, deserilize_handler)
 
         resource['entity'] = entities
 

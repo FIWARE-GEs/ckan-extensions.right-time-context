@@ -7,9 +7,9 @@
             {% for entity in data.entity %}
               {% set prefix = 'entity__%d__' % loop.index0 %}
               {% set checkboxId = prefix ~ 'isPattern'%}
-              {{ form.checkbox(checkboxId, label=_('Is Pattern'), checked=entity.isPattern, error=errors[checkboxId], classes=['control-full', 'entity-pattern']) }}
+              {{ form.checkbox(checkboxId, label=_('Is ID Pattern'), checked=entity.isPattern, error=errors[checkboxId], classes=['control-full', 'entity-pattern']) }}
               {{ form.custom(
-                    names=(prefix ~ 'id', prefix ~ 'type', prefix ~ 'delete'),
+                    names=(prefix ~ 'id', prefix ~ 'value', prefix ~ 'delete'),
                     id='field-entities-%d' % loop.index,
                     label=_('Entity'),
                     values=(entity.id, entity.value, entity.deleted),
@@ -26,7 +26,7 @@
               {% set index = loop.index0 + (data.entity|count) %}
               {% set prefix = 'entity__%d__' % index %}
               {% set checkboxId = prefix ~ 'isPattern'%}
-              {{ form.checkbox(checkboxId, label=_('Is Pattern'), checked=entity.isPattern, error=errors[checkboxId], classes=['control-full', 'entity-pattern']) }}
+              {{ form.checkbox(checkboxId, label=_('Is ID Pattern'), checked=entity.isPattern, error=errors[checkboxId], classes=['control-full', 'entity-pattern']) }}
               {{ form.custom(
                     names=(prefix ~ 'id', prefix ~ 'value', prefix ~ 'delete'),
                     id='field-entities-%d' % index,
@@ -60,7 +60,7 @@
             $('.entity-pattern input').removeAttr('value');
             $('.entity-pattern input').attr('style', 'width:auto; float:right;');
             $('.entity-pattern input').parent().removeClass('checkbox btn btn-danger fa fa-times');
-            $('.entity-pattern input').parent().attr('style', 'width:95px');
+            $('.entity-pattern input').parent().attr('style', 'width:115px');
 
             // Format custom label values
             $("label:contains('Key')").text('Id');
