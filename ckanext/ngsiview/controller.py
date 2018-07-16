@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # Copyright 2015 Telefonica Investigacion y Desarrollo, S.A.U
+# Copyright (c) 2018 Future Internet Consulting and Development Solutions S.L.
 #
 # This file is part of ckanext-ngsipreview.
 #
@@ -83,11 +84,11 @@ class ProxyNGSIController(base.BaseController):
                 if 'oauth_req' in resource and resource['oauth_req'] == 'true':
                     details = 'ERROR 401 token expired. Retrieving new token, reload please.'
                     log.info(details)
-                    base.abort(409, detail=details)
                     toolkit.c.usertoken_refresh()
+                    base.abort(409, detail=details)
 
                 elif 'oauth_req' not in resource or resource['oauth_req'] == 'false':
-                    details = 'This query may need Oauth-token, please check if the token field on resource_edit is correct.'
+                    details = 'Authentication requested by server, please check resourece configuration.'
                     log.info(details)
                     base.abort(409, detail=details)
 

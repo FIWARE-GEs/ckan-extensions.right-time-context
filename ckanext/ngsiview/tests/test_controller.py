@@ -83,3 +83,29 @@ class NgsiViewControllerTestCase(unittest.TestCase):
 
         base.abort.assert_called_with(409, detail=ANY)
         requests.get.assert_not_called()
+
+    @parameterized.expand([
+        (True,),
+        (False,),
+    ])
+    @patch.multiple("ckanext.ngsiview.controller", base=DEFAULT, logic=DEFAULT, requests=DEFAULT, toolkit=DEFAULT)
+    def test_auth_required_request(self, auth_configured, base, logic, requests, toolkit):
+        resource = {
+            'url': "http://cb.example.org/v2/entites",
+            'oauth_req': 'true' if auth_configured else 'false'
+        }
+        logic.get_action('resource_show').return_value = resource
+        response = requests.get()
+        response.status_code = 401
+        requests.get.reset_mock()
+        base.abort.side_effect = TypeError
+
+        with self.assertRaises(TypeError):
+            self.controller.proxy_ngsi_resource("resource_id")
+
+        base.abort.assert_called_once_with(409, detail=ANY)
+        requests.get.assert_called_once_with(resource['url'], headers=ANY, stream=True, verify=True)
+        if auth_configured:
+            toolkit.c.usertoken_refresh.assert_called_with()
+        else:
+            toolkit.c.usertoken_refresh.assert_not_called()
