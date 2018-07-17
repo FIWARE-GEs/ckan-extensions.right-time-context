@@ -32,6 +32,15 @@ class NgsiViewControllerTestCase(unittest.TestCase):
         super(NgsiViewControllerTestCase, cls).setUpClass()
         cls.controller = ProxyNGSIController()
 
+    def _mock_response(self, req_method):
+        body = '{"json": "body"}'
+        response = req_method
+        response.status_code = 200
+        response.headers['content-type'] = "application/json"
+        response.encoding = "UTF-8"
+        response.iter_content.return_value = (body,)
+        return response, body
+
     @parameterized.expand([
         ({'format': 'fiware-ngsi'}, {}),
         ({"oauth_req": "true", 'format': 'fiware-ngsi'}, {"X-Auth-Token": "valid-access-token"}),
@@ -41,14 +50,10 @@ class NgsiViewControllerTestCase(unittest.TestCase):
     ])
     @patch.multiple("ckanext.ngsiview.controller", base=DEFAULT, logic=DEFAULT, requests=DEFAULT, toolkit=DEFAULT)
     def test_basic_request(self, resource, headers, base, logic, requests, toolkit):
-        body = '{"json": "body"}'
         resource['url'] = "http://cb.example.org/v2/entites"
         logic.get_action('resource_show').return_value = resource
-        response = requests.get()
-        response.status_code = 200
-        response.headers['content-type'] = "application/json"
-        response.encoding = "UTF-8"
-        response.iter_content.return_value = (body,)
+        response, body = self._mock_response(requests.get())
+
         toolkit.c.usertoken = {
             'access_token': "valid-access-token",
         }
@@ -61,6 +66,44 @@ class NgsiViewControllerTestCase(unittest.TestCase):
         self.controller.proxy_ngsi_resource("resource_id")
 
         requests.get.assert_called_with(resource['url'], headers=expected_headers, stream=True, verify=True)
+        base.response.body_file.write.assert_called_with(body)
+
+    @parameterized.expand([
+        ({
+            'format': 'fiware-ngsi-registry',
+            'url': 'http://cb.example.org',
+            'entity': [{'id': '.*', 'value': 'Room', 'isPattern': 'on'}, {'id': 'vehicle1', 'value': 'Vehicle'}],
+            'attrs_str': 'temperature,speed',
+            'expression': 'georel=near;minDistance:5000&geometry=point&coords=-40.4,-3.5'
+        }, {
+            'entities': [{'idPattern': '.*', 'type': 'Room'}, {'id': 'vehicle1', 'type': 'Vehicle'}],
+            'attrs': ['temperature', 'speed'],
+            'expression': {
+                'georel': 'near;minDistance:5000',
+                'geometry': 'point',
+                'coords': '-40.4,-3.5'
+            }
+        }, {})
+    ])
+    @patch.multiple("ckanext.ngsiview.controller", base=DEFAULT, logic=DEFAULT, requests=DEFAULT, toolkit=DEFAULT)
+    def test_registration_request(self, resource, query, headers, base, logic, requests, toolkit):
+        logic.get_action('resource_show').return_value = resource
+        response, body = self._mock_response(requests.post())
+
+        toolkit.c.usertoken = {
+            'access_token': "valid-access-token",
+        }
+
+        expected_headers = {
+            "Accept": "application/json",
+            'Content-Type': 'application/json'
+        }
+        expected_headers.update(headers)
+
+        self.controller.proxy_ngsi_resource("resource_id")
+
+        url = resource['url'] + '/v2/op/query'
+        requests.post.assert_called_with(url, headers=expected_headers, json=query, stream=True, verify=True)
         base.response.body_file.write.assert_called_with(body)
 
     @parameterized.expand([
