@@ -122,7 +122,7 @@ class ProxyNGSIController(base.BaseController):
         }
 
         if 'oauth_req' in resource and resource['oauth_req'] == 'true':
-            token = p.toolkit.c.usertoken['access_token']
+            token = toolkit.c.usertoken['access_token']
             headers['X-Auth-Token'] = token
 
         if resource.get('tenant', '') != '':
