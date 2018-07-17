@@ -66,11 +66,14 @@ class NgsiViewControllerTestCase(unittest.TestCase):
         ({"service_path": "/a", 'format': 'fiware-ngsi'}, {"FIWARE-ServicePath": "/a"}),
         ({"tenant": "a", "service_path": "/a,/b", 'format': 'fiware-ngsi'}, {"FIWARE-Service": "a", "FIWARE-ServicePath": "/a,/b"}),
     ])
-    @patch.multiple("ckanext.ngsiview.controller", base=DEFAULT, logic=DEFAULT, requests=DEFAULT, toolkit=DEFAULT)
-    def test_basic_request(self, resource, headers, base, logic, requests, toolkit):
+    @patch.multiple("ckanext.ngsiview.controller", base=DEFAULT, logic=DEFAULT, requests=DEFAULT, toolkit=DEFAULT, os=DEFAULT)
+    def test_basic_request(self, resource, headers, base, logic, requests, toolkit, os):
         resource['url'] = "http://cb.example.org/v2/entites"
         logic.get_action('resource_show').return_value = resource
         response, body = self._mock_response(requests.get())
+        os.environ = {
+            "CKAN_VERIFY_REQUESTS": "true",
+        }
 
         toolkit.c.usertoken = {
             'access_token': "valid-access-token",
@@ -99,10 +102,13 @@ class NgsiViewControllerTestCase(unittest.TestCase):
             'attrs': [],
         }, {})
     ])
-    @patch.multiple("ckanext.ngsiview.controller", base=DEFAULT, logic=DEFAULT, requests=DEFAULT, toolkit=DEFAULT)
-    def test_registration_request(self, resource, query, headers, base, logic, requests, toolkit):
+    @patch.multiple("ckanext.ngsiview.controller", base=DEFAULT, logic=DEFAULT, requests=DEFAULT, toolkit=DEFAULT, os=DEFAULT)
+    def test_registration_request(self, resource, query, headers, base, logic, requests, toolkit, os):
         logic.get_action('resource_show').return_value = resource
         response, body = self._mock_response(requests.post())
+        os.environ = {
+            "CKAN_VERIFY_REQUESTS": "true",
+        }
 
         toolkit.c.usertoken = {
             'access_token': "valid-access-token",
@@ -120,8 +126,8 @@ class NgsiViewControllerTestCase(unittest.TestCase):
         requests.post.assert_called_with(url, headers=expected_headers, json=query, stream=True, verify=True)
         base.response.body_file.write.assert_called_with(body)
 
-    @patch.multiple("ckanext.ngsiview.controller", base=DEFAULT, logic=DEFAULT, requests=DEFAULT, toolkit=DEFAULT)
-    def test_invalid_expression(self, base, logic, requests, toolkit):
+    @patch.multiple("ckanext.ngsiview.controller", base=DEFAULT, logic=DEFAULT, requests=DEFAULT, toolkit=DEFAULT, os=DEFAULT)
+    def test_invalid_expression(self, base, logic, requests, toolkit, os):
         resource = {
             'format': 'fiware-ngsi-registry',
             'url': 'http://cb.example.org',
@@ -129,6 +135,10 @@ class NgsiViewControllerTestCase(unittest.TestCase):
             'attrs_str': '',
             'expression': 'invalid=near;minDistance:5000'
         }
+        os.environ = {
+            "CKAN_VERIFY_REQUESTS": "true",
+        }
+
         toolkit.c.usertoken = {
             'access_token': "valid-access-token",
         }
@@ -138,10 +148,13 @@ class NgsiViewControllerTestCase(unittest.TestCase):
         self.controller.proxy_ngsi_resource("resource_id")
         base.abort.assert_called_with(422, detail='The expression is not a valid one for NGSI Registration, only georel, geometry, and coords is supported')
 
-    @patch.multiple("ckanext.ngsiview.controller", base=DEFAULT, logic=DEFAULT, requests=DEFAULT, toolkit=DEFAULT)
-    def test_invalid_reg_query(self, base, logic, requests, toolkit):
+    @patch.multiple("ckanext.ngsiview.controller", base=DEFAULT, logic=DEFAULT, requests=DEFAULT, toolkit=DEFAULT, os=DEFAULT)
+    def test_invalid_reg_query(self, base, logic, requests, toolkit, os):
         logic.get_action('resource_show').return_value = self.REGISTRY_RESOURCE
         response, body = self._mock_response(requests.post())
+        os.environ = {
+            "CKAN_VERIFY_REQUESTS": "true",
+        }
 
         err_msg = 'Error in the CB'
         response.status_code = 400
@@ -157,8 +170,8 @@ class NgsiViewControllerTestCase(unittest.TestCase):
         ("ftp://example.com",),
         ("tatata:///da",),
     ])
-    @patch.multiple("ckanext.ngsiview.controller", base=DEFAULT, logic=DEFAULT, requests=DEFAULT, toolkit=DEFAULT)
-    def test_invalid_url_request(self, url, base, logic, requests, toolkit):
+    @patch.multiple("ckanext.ngsiview.controller", base=DEFAULT, logic=DEFAULT, requests=DEFAULT, toolkit=DEFAULT, os=DEFAULT)
+    def test_invalid_url_request(self, url, base, logic, requests, toolkit, os=DEFAULT):
         resource = {
             'url': url,
         }
@@ -175,8 +188,8 @@ class NgsiViewControllerTestCase(unittest.TestCase):
         (True,),
         (False,),
     ])
-    @patch.multiple("ckanext.ngsiview.controller", base=DEFAULT, logic=DEFAULT, requests=DEFAULT, toolkit=DEFAULT)
-    def test_auth_required_request(self, auth_configured, base, logic, requests, toolkit):
+    @patch.multiple("ckanext.ngsiview.controller", base=DEFAULT, logic=DEFAULT, requests=DEFAULT, toolkit=DEFAULT, os=DEFAULT)
+    def test_auth_required_request(self, auth_configured, base, logic, requests, toolkit, os):
         resource = {
             'url': "http://cb.example.org/v2/entites",
             'oauth_req': 'true' if auth_configured else 'false',
@@ -187,6 +200,9 @@ class NgsiViewControllerTestCase(unittest.TestCase):
         response.status_code = 401
         requests.get.reset_mock()
         base.abort.side_effect = TypeError
+        os.environ = {
+            "CKAN_VERIFY_REQUESTS": "true",
+        }
 
         with self.assertRaises(TypeError):
             self.controller.proxy_ngsi_resource("resource_id")
@@ -203,8 +219,8 @@ class NgsiViewControllerTestCase(unittest.TestCase):
         ("ConnectionError", 502),
         ("Timeout", 504),
     ])
-    @patch.multiple("ckanext.ngsiview.controller", base=DEFAULT, logic=DEFAULT, requests=DEFAULT, toolkit=DEFAULT)
-    def test_auth_required_request(self, exception, status_code, base, logic, requests, toolkit):
+    @patch.multiple("ckanext.ngsiview.controller", base=DEFAULT, logic=DEFAULT, requests=DEFAULT, toolkit=DEFAULT, os=DEFAULT)
+    def test_auth_required_request(self, exception, status_code, base, logic, requests, toolkit, os):
         resource = {
             'url': "http://cb.example.org/v2/entites",
             'format': 'fiware-ngsi'
@@ -219,3 +235,31 @@ class NgsiViewControllerTestCase(unittest.TestCase):
 
         base.abort.assert_called_once_with(status_code, detail=ANY)
         requests.get.assert_called_once_with(resource['url'], headers=ANY, stream=True, verify=True)
+
+    @parameterized.expand([
+        ({}, {}, True),
+        ({}, {"ckan.verify_requests": False}, False),
+        ({}, {"ckan.ngsi.verify_requests": False, "ckan.verify_requests": True}, False),
+        ({"CKAN_VERIFY_REQUESTS": "false"}, {"ckan.verify_requests": True}, False),
+        ({"CKAN_NGSI_VERIFY_REQUESTS": "True"}, {"ckan.verify_requests": False}, True),
+        ({"CKAN_NGSI_VERIFY_REQUESTS": "True"}, {"ckan.ngsi.verify_requests": False}, True),
+        ({"CKAN_NGSI_VERIFY_REQUESTS": "true", "CKAN_VERIFY_REQUESTS": "false"}, {"ckan.verify_requests": False}, True),
+        ({"CKAN_NGSI_VERIFY_REQUESTS": "on"}, {"ckan.verify_requests": False}, True),
+        ({"CKAN_NGSI_VERIFY_REQUESTS": "1"}, {"ckan.verify_requests": False}, True),
+        ({"CKAN_NGSI_VERIFY_REQUESTS": "off"}, {"ckan.verify_requests": True}, False),
+        ({"CKAN_NGSI_VERIFY_REQUESTS": "0"}, {"ckan.verify_requests": True}, False),
+        ({"CKAN_NGSI_VERIFY_REQUESTS": "/path"}, {"ckan.verify_requests": True}, "/path"),
+        ({"CKAN_VERIFY_REQUESTS": "/path/A/b"}, {"ckan.verify_requests": "path/2"}, "/path/A/b"),
+    ])
+    @patch.multiple("ckanext.ngsiview.controller", base=DEFAULT, logic=DEFAULT, requests=DEFAULT, toolkit=DEFAULT, os=DEFAULT)
+    def test_verify_requests(self, env, config, expected_value, base, logic, requests, toolkit, os):
+        logic.get_action('resource_show').return_value = {
+            'url': "https://cb.example.org/v2/entites",
+            'format': 'fiware-ngsi'
+        }
+        os.environ = env
+        toolkit.config = config
+
+        with patch.object(self.controller, '_proxy_query_resource') as query_mock:
+            self.controller.proxy_ngsi_resource("resource_id")
+            query_mock.assert_called_once_with(ANY, ANY, ANY, verify=expected_value)

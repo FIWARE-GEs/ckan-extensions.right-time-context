@@ -22,13 +22,14 @@
 
 import json
 from logging import getLogger
+import os
 import urlparse
 
 import ckan.logic as logic
 import ckan.lib.base as base
 from ckan.plugins import toolkit
-from pylons import config
 import requests
+import six
 
 from .plugin import NGSI_REG_FORMAT
 
@@ -39,8 +40,7 @@ CHUNK_SIZE = 512
 
 class ProxyNGSIController(base.BaseController):
 
-    def _proxy_query_resource(self, resource, parsed_url, headers):
-        verify = config.get('ckan.ngsi.verify_requests', True)
+    def _proxy_query_resource(self, resource, parsed_url, headers, verify=True):
 
         if parsed_url.path.find('/v1/queryContext') != -1:
             if resource.get("payload", "").strip() == "":
@@ -49,7 +49,7 @@ class ProxyNGSIController(base.BaseController):
 
             try:
                 json.loads(resource['payload'])
-            except:
+            except json.JSONDecodeError:
                 details = "Payload field doesn't contain valid JSON data."
                 base.abort(409, detail=details)
 
@@ -61,8 +61,7 @@ class ProxyNGSIController(base.BaseController):
 
         return r
 
-    def _proxy_registration_resource(self, resource, parsed_url, headers):
-        verify = config.get('ckan.ngsi.verify_requests', True)
+    def _proxy_registration_resource(self, resource, parsed_url, headers, verify=True):
         path = parsed_url.path
 
         if path.endswith('/'):
@@ -119,7 +118,6 @@ class ProxyNGSIController(base.BaseController):
 
         log.info('Proxify resource {id}'.format(id=resource_id))
         resource = logic.get_action('resource_show')(context, {'id': resource_id})
-        verify = config.get('ckan.ngsi.verify_requests', True)
 
         headers = {
             'Accept': 'application/json'
@@ -140,11 +138,31 @@ class ProxyNGSIController(base.BaseController):
         if parsed_url.scheme not in ("http", "https") or not parsed_url.netloc:
             base.abort(409, detail='Invalid URL.')
 
+        # Process verify configuration
+        verify_conf = os.environ.get('CKAN_NGSI_VERIFY_REQUESTS', toolkit.config.get('ckan.ngsi.verify_requests'))
+        if verify_conf is None:
+            verify_conf = os.environ.get('CKAN_VERIFY_REQUESTS', toolkit.config.get('ckan.verify_requests'))
+
+        if isinstance(verify_conf, six.string_types):
+            compare_env = verify_conf.lower().strip()
+            if compare_env in ("true", "1", "on"):
+                verify = True
+            elif compare_env in ("false", "0", "off"):
+                verify = False
+            else:
+                verify = verify_conf
+        elif isinstance(verify_conf, bool):
+            verify = verify_conf
+        else:
+            verify = True
+
+        # Make the request to the server
         try:
             if resource['format'].lower() == NGSI_REG_FORMAT:
-                r = self._proxy_registration_resource(resource, parsed_url, headers)
+                r = self._proxy_registration_resource(resource, parsed_url, headers, verify=verify)
             else:
-                r = self._proxy_query_resource(resource, parsed_url, headers)
+                r = self._proxy_query_resource(resource, parsed_url, headers, verify=verify)
+
         except requests.HTTPError:
             details = 'Could not proxy ngsi_resource. We are working to resolve this issue as quickly as possible'
             base.abort(409, detail=details)
