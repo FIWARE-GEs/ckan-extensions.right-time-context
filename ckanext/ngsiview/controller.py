@@ -133,7 +133,7 @@ class ProxyNGSIController(base.BaseController):
         url = resource['url']
         parsed_url = urlparse.urlsplit(url)
 
-        if parsedurl.scheme not in ("http", "https") or not parsedurl.netloc:
+        if parsed_url.scheme not in ("http", "https") or not parsed_url.netloc:
             base.abort(409, detail='Invalid URL.')
 
         try:
