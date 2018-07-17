@@ -235,3 +235,31 @@ class NgsiViewControllerTestCase(unittest.TestCase):
 
         base.abort.assert_called_once_with(status_code, detail=ANY)
         requests.get.assert_called_once_with(resource['url'], headers=ANY, stream=True, verify=True)
+
+    @parameterized.expand([
+        ({}, {}, True),
+        ({}, {"ckan.verify_requests": False}, False),
+        ({}, {"ckan.ngsi.verify_requests": False, "ckan.verify_requests": True}, False),
+        ({"CKAN_VERIFY_REQUESTS": "false"}, {"ckan.verify_requests": True}, False),
+        ({"CKAN_NGSI_VERIFY_REQUESTS": "True"}, {"ckan.verify_requests": False}, True),
+        ({"CKAN_NGSI_VERIFY_REQUESTS": "True"}, {"ckan.ngsi.verify_requests": False}, True),
+        ({"CKAN_NGSI_VERIFY_REQUESTS": "true", "CKAN_VERIFY_REQUESTS": "false"}, {"ckan.verify_requests": False}, True),
+        ({"CKAN_NGSI_VERIFY_REQUESTS": "on"}, {"ckan.verify_requests": False}, True),
+        ({"CKAN_NGSI_VERIFY_REQUESTS": "1"}, {"ckan.verify_requests": False}, True),
+        ({"CKAN_NGSI_VERIFY_REQUESTS": "off"}, {"ckan.verify_requests": True}, False),
+        ({"CKAN_NGSI_VERIFY_REQUESTS": "0"}, {"ckan.verify_requests": True}, False),
+        ({"CKAN_NGSI_VERIFY_REQUESTS": "/path"}, {"ckan.verify_requests": True}, "/path"),
+        ({"CKAN_VERIFY_REQUESTS": "/path/A/b"}, {"ckan.verify_requests": "path/2"}, "/path/A/b"),
+    ])
+    @patch.multiple("ckanext.ngsiview.controller", base=DEFAULT, logic=DEFAULT, requests=DEFAULT, toolkit=DEFAULT, os=DEFAULT)
+    def test_verify_requests(self, env, config, expected_value, base, logic, requests, toolkit, os):
+        logic.get_action('resource_show').return_value = {
+            'url': "https://cb.example.org/v2/entites",
+            'format': 'fiware-ngsi'
+        }
+        os.environ = env
+        toolkit.config = config
+
+        with patch.object(self.controller, '_proxy_query_resource') as query_mock:
+            self.controller.proxy_ngsi_resource("resource_id")
+            query_mock.assert_called_once_with(ANY, ANY, ANY, verify=expected_value)
