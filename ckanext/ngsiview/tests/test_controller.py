@@ -27,6 +27,24 @@ from ckanext.ngsiview.controller import ProxyNGSIController
 
 class NgsiViewControllerTestCase(unittest.TestCase):
 
+    REGISTRY_RESOURCE = {
+        'format': 'fiware-ngsi-registry',
+        'url': 'http://cb.example.org',
+        'entity': [{'id': '.*', 'value': 'Room', 'isPattern': 'on'}, {'id': 'vehicle1', 'value': 'Vehicle'}],
+        'attrs_str': 'temperature,speed',
+        'expression': 'georel=near;minDistance:5000&geometry=point&coords=-40.4,-3.5'
+    }
+
+    REGISTRY_QUERY = {
+        'entities': [{'idPattern': '.*', 'type': 'Room'}, {'id': 'vehicle1', 'type': 'Vehicle'}],
+        'attrs': ['temperature', 'speed'],
+        'expression': {
+            'georel': 'near;minDistance:5000',
+            'geometry': 'point',
+            'coords': '-40.4,-3.5'
+        }
+    }
+
     @classmethod
     def setUpClass(cls):
         super(NgsiViewControllerTestCase, cls).setUpClass()
@@ -69,20 +87,16 @@ class NgsiViewControllerTestCase(unittest.TestCase):
         base.response.body_file.write.assert_called_with(body)
 
     @parameterized.expand([
+        (REGISTRY_RESOURCE, REGISTRY_QUERY, {}),
         ({
             'format': 'fiware-ngsi-registry',
             'url': 'http://cb.example.org',
-            'entity': [{'id': '.*', 'value': 'Room', 'isPattern': 'on'}, {'id': 'vehicle1', 'value': 'Vehicle'}],
-            'attrs_str': 'temperature,speed',
-            'expression': 'georel=near;minDistance:5000&geometry=point&coords=-40.4,-3.5'
+            'entity': [{'id': 'vehicle1', 'value': 'Vehicle'}],
+            'expression': '',
+            'attrs_str': ''
         }, {
-            'entities': [{'idPattern': '.*', 'type': 'Room'}, {'id': 'vehicle1', 'type': 'Vehicle'}],
-            'attrs': ['temperature', 'speed'],
-            'expression': {
-                'georel': 'near;minDistance:5000',
-                'geometry': 'point',
-                'coords': '-40.4,-3.5'
-            }
+            'entities': [{'id': 'vehicle1', 'type': 'Vehicle'}],
+            'attrs': [],
         }, {})
     ])
     @patch.multiple("ckanext.ngsiview.controller", base=DEFAULT, logic=DEFAULT, requests=DEFAULT, toolkit=DEFAULT)
@@ -105,6 +119,36 @@ class NgsiViewControllerTestCase(unittest.TestCase):
         url = resource['url'] + '/v2/op/query'
         requests.post.assert_called_with(url, headers=expected_headers, json=query, stream=True, verify=True)
         base.response.body_file.write.assert_called_with(body)
+
+    @patch.multiple("ckanext.ngsiview.controller", base=DEFAULT, logic=DEFAULT, requests=DEFAULT, toolkit=DEFAULT)
+    def test_invalid_expression(self, base, logic, requests, toolkit):
+        resource = {
+            'format': 'fiware-ngsi-registry',
+            'url': 'http://cb.example.org',
+            'entity': [{'id': 'vehicle1', 'value': 'Vehicle'}],
+            'attrs_str': '',
+            'expression': 'invalid=near;minDistance:5000'
+        }
+        toolkit.c.usertoken = {
+            'access_token': "valid-access-token",
+        }
+
+        logic.get_action('resource_show').return_value = resource
+
+        self.controller.proxy_ngsi_resource("resource_id")
+        base.abort.assert_called_with(422, detail='The expression is not a valid one for NGSI Registration, only georel, geometry, and coords is supported')
+
+    @patch.multiple("ckanext.ngsiview.controller", base=DEFAULT, logic=DEFAULT, requests=DEFAULT, toolkit=DEFAULT)
+    def test_invalid_reg_query(self, base, logic, requests, toolkit):
+        logic.get_action('resource_show').return_value = self.REGISTRY_RESOURCE
+        response, body = self._mock_response(requests.post())
+
+        err_msg = 'Error in the CB'
+        response.status_code = 400
+        response.json.return_value = {'description': err_msg}
+
+        self.controller.proxy_ngsi_resource("resource_id")
+        base.abort.assert_called_with(422, detail=err_msg)
 
     @parameterized.expand([
         ("",),
