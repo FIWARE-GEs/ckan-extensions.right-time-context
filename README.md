@@ -1,8 +1,8 @@
 CKAN ckanext-ngsiview
 =====================
 
-[![Build Status](https://travis-ci.org/conwetlab/ckanext-ngsiview.svg?branch=ngsiv2)](https://travis-ci.org/conwetlab/ckanext-ngsiview)
-[![Coverage Status](https://coveralls.io/repos/github/conwetlab/ckanext-ngsiview/badge.svg?branch=ngsiv2)](https://coveralls.io/github/conwetlab/ckanext-ngsiview?branch=ngsiv2)
+[![Build Status](https://travis-ci.org/conwetlab/ckanext-ngsiview.svg?branch=master)](https://travis-ci.org/conwetlab/ckanext-ngsiview)
+[![Coverage Status](https://coveralls.io/repos/github/conwetlab/ckanext-ngsiview/badge.svg?branch=master)](https://coveralls.io/github/conwetlab/ckanext-ngsiview?branch=master)
 
 CKAN extension that will give you the ability to manage real-time resources provided by a FIWARE Context Broker. This extension also provides a basic view to provide a data preview to user browsing context broker resources, altough it can be combined with other plugins (e.g. the [`ckanext-wirecloud_view`](https://github.com/conwetlab/ckanext-wirecloud_view.git) one) to provide a more advanced visualization of the data provided using CKAN.
 
