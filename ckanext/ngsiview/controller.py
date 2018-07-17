@@ -69,9 +69,13 @@ class ProxyNGSIController(base.BaseController):
             path = path[:-1]
 
         path = path + '/v2/op/query'
+        attrs = []
+
+        if 'attrs_str' in resource and len(resource['attrs_str']):
+            attrs = resource['attrs_str'].split(',')
         body = {
             'entities': [],
-            'attrs': resource['attrs_str'].split(',')
+            'attrs': attrs
         }
 
         # Include entity information
