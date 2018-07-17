@@ -23,6 +23,7 @@ from mock import DEFAULT, patch
 from parameterized import parameterized
 
 import ckanext.ngsiview.plugin as plugin
+from ckan.plugins.toolkit import ValidationError
 
 
 class NgsiViewPluginTest(unittest.TestCase):
@@ -46,3 +47,45 @@ class NgsiViewPluginTest(unittest.TestCase):
             instance.can_view({'resource': {'format': resource_format, 'url': resource_url}}),
             expected
         )
+
+    @parameterized.expand([
+        ({'format': 'fiware-ngsi-registry', 'entity': [{'id': '.*', 'value': 'Room', 'isPattern': 'on'}, {'id': 'vehicle1', 'value': 'Vehicle'}]},
+            {'format': 'fiware-ngsi-registry', 'entity__0__id': '.*', 'entity__0__value': 'Room', 'entity__0__isPattern': 'on',
+                'entity__1__id': 'vehicle1', 'entity__1__value': 'Vehicle'}),
+        ({'format': 'fiware-ngsi'}, {'format': 'fiware-ngsi'})
+    ])
+    def test_before_create(self, resource, serialized):
+        instance = plugin.NgsiView()
+
+        result = instance.before_create({}, resource)
+        self.assertEquals(serialized, result)
+
+    def test_before_create_missing_entity(self):
+        instance = plugin.NgsiView()
+
+        with self.assertRaises(ValidationError):
+            instance.before_create({}, {'format': 'fiware-ngsi-registry'})
+
+    @parameterized.expand([
+        ({'format': 'fiware-ngsi-registry', 'entity': [{'id': '.*', 'value': 'Room', 'isPattern': 'on', 'delete': 'on'}, {'id': 'vehicle5', 'value': 'Vehicle'}],
+            'entity__0__id': '.*', 'entity__0__value': 'Room', 'entity__0__isPattern': 'on', 'entity__1__id': 'vehicle1', 'entity__1__value': 'Vehicle'},
+            {'format': 'fiware-ngsi-registry', 'entity__0__id': 'vehicle5', 'entity__0__value': 'Vehicle'})
+    ])
+    def test_before_update(self, resource, serialized):
+        instance = plugin.NgsiView()
+
+        result = instance.before_update({}, {}, resource)
+        self.assertEquals(serialized, result)
+
+    @parameterized.expand([
+        ({'format': 'fiware-ngsi-registry', 'entity__0__id': '.*', 'entity__0__value': 'Room', 'entity__0__isPattern': 'on',
+                'entity__1__id': 'vehicle1', 'entity__1__value': 'Vehicle'},
+            {'format': 'fiware-ngsi-registry', 'entity__0__id': '.*', 'entity__0__value': 'Room', 'entity__0__isPattern': 'on',
+                'entity__1__id': 'vehicle1', 'entity__1__value': 'Vehicle', 'entity': [{'id': '.*', 'value': 'Room', 'isPattern': 'on'},
+                    {'id': 'vehicle1', 'value': 'Vehicle'}]})
+    ])
+    def test_before_show(self, resource, deserialized):
+        instance = plugin.NgsiView()
+
+        instance.before_show(resource)
+        self.assertEquals(deserialized, resource)

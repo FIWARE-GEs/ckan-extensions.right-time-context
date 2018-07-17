@@ -17,7 +17,7 @@
 # General Public License for more details.
 #
 # You should have received a copy of the GNU Affero General Public License
-# along with Orion Context Broker. If not, see http://www.gnu.org/licenses/.
+# along with CKAN NGSI View extension. If not, see http://www.gnu.org/licenses/.
 
 import logging
 
@@ -34,6 +34,7 @@ except ImportError:
 
 
 NGSI_FORMAT = 'fiware-ngsi'
+NGSI_REG_FORMAT = 'fiware-ngsi-registry'
 
 
 def check_query(resource):
@@ -47,6 +48,7 @@ class NgsiView(p.SingletonPlugin):
     p.implements(p.IConfigurer, inherit=True)
     p.implements(p.IConfigurable, inherit=True)
     p.implements(p.IResourceView, inherit=True)
+    p.implements(p.IResourceController, inherit=True)
 
     def before_map(self, m):
         m.connect(
@@ -93,7 +95,7 @@ class NgsiView(p.SingletonPlugin):
         proxy_enabled = p.plugin_loaded('resource_proxy')
         same_domain = datapreview.on_same_domain(data_dict)
 
-        if format_lower == NGSI_FORMAT and check_query(resource):
+        if (format_lower == NGSI_FORMAT and check_query(resource)) or format_lower == NGSI_REG_FORMAT:
             return same_domain or proxy_enabled
         else:
             return False
@@ -103,6 +105,7 @@ class NgsiView(p.SingletonPlugin):
         proxy_enabled = p.plugin_loaded('resource_proxy')
         oauth2_enabled = p.plugin_loaded('oauth2')
         same_domain = datapreview.on_same_domain(data_dict)
+        format_lower = resource.get('format', '').lower()
 
         if 'oauth_req' not in resource:
             oauth_req = 'false'
@@ -110,7 +113,7 @@ class NgsiView(p.SingletonPlugin):
             oauth_req = resource['oauth_req']
 
         url = resource['url']
-        if not check_query(resource):
+        if format_lower == NGSI_FORMAT and not check_query(resource):
             details = "</br></br>This is not a ContextBroker query, please check <a href='https://forge.fiware.org/plugins/mediawiki/wiki/fiware/index.php/Publish/Subscribe_Broker_-_Orion_Context_Broker_-_User_and_Programmers_Guide'>Orion Context Broker documentation</a></br></br></br>"
             f_details = "This is not a ContextBroker query, please check Orion Context Broker documentation."
             h.flash_error(f_details, allow_html=False)
@@ -149,3 +152,88 @@ class NgsiView(p.SingletonPlugin):
 
     def view_template(self, context, data_dict):
         return 'ngsi.html'
+
+    def _iterate_serialized(self, resource, handler):
+        pending_entities = True
+        index = 0
+        while pending_entities:
+            prefix = 'entity__' + str(index) + '__'
+
+            if prefix + 'id' in resource:
+                handler(prefix)
+                index = index + 1
+            else:
+                pending_entities = False
+
+    def _serialize_resource(self, resource):
+        # Check if NGSI resource is being created
+        serialized_resource = resource
+        if resource['format'] == NGSI_REG_FORMAT:
+
+            if 'entity' not in resource or not len(resource['entity']):
+                # Raise an error, al least one entity must be provided
+                raise p.toolkit.ValidationError({'NGSI Data': ['At least one NGSI entity must be provided']})
+
+            # Remove all serialized entries from the resource
+            def remove_serialized(prefix):
+                del resource[prefix + 'id']
+                del resource[prefix + 'value']
+
+                if prefix + 'isPattern' in resource:
+                    del resource[prefix + 'isPattern']
+
+            self._iterate_serialized(resource, remove_serialized)
+
+            index = 0
+            # Serialize entity information to support custom field saving
+            entities = {}
+            for entity in resource['entity']:
+                if 'delete' in entity and entity['delete'] == 'on':
+                    continue
+
+                prefix = 'entity__' + str(index) + '__'
+                entities[prefix + 'id'] = entity['id']
+                entities[prefix + 'value'] = entity['value']
+
+                # Check if there is an isPattern field
+                if 'isPattern' in entity and entity['isPattern'] == 'on':
+                    entities[prefix + 'isPattern'] = entity['isPattern']
+                index = index + 1
+
+            del serialized_resource['entity']
+            serialized_resource.update(entities)
+
+        return serialized_resource
+
+    def before_create(self, context, resource):
+        return self._serialize_resource(resource)
+    
+    def after_create(self, context, resource):
+        # Create entry in the NGSI registry
+        pass
+
+    def before_update(self, context, current, resource):
+        return self._serialize_resource(resource)
+
+    def after_update(self, context, resource):
+        pass
+
+    def before_show(self, resource):
+        # Deserialize resource information
+        entities = []
+        def deserilize_handler(prefix):
+            entity = {
+                'id': resource[prefix + 'id'],
+                'value': resource[prefix + 'value'],
+            }
+
+            if prefix + 'isPattern' in resource:
+                entity['isPattern'] = resource[prefix + 'isPattern']
+
+            entities.append(entity)
+
+        self._iterate_serialized(resource, deserilize_handler)
+
+        resource['entity'] = entities
+
+        return resource

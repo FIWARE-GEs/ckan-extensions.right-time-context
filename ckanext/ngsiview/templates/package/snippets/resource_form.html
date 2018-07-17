@@ -2,14 +2,124 @@
 {% block basic_fields %}
     {{ super() }}
 
+    <h3 class="ngsireg-input hidden">Data Provided</h3>
+        <div data-module="custom-fields" class="ngsireg-input hidden">
+            {% for entity in data.entity %}
+              {% set prefix = 'entity__%d__' % loop.index0 %}
+              {% set checkboxId = prefix ~ 'isPattern'%}
+              {{ form.checkbox(checkboxId, label=_('Is ID Pattern'), checked=entity.isPattern, error=errors[checkboxId], classes=['control-full', 'entity-pattern']) }}
+              {{ form.custom(
+                    names=(prefix ~ 'id', prefix ~ 'value', prefix ~ 'delete'),
+                    id='field-entities-%d' % loop.index,
+                    label=_('Entity'),
+                    values=(entity.id, entity.value, entity.deleted),
+                    error=errors[prefix ~ 'id'] or errors[prefix ~ 'value']
+              ) }}
+            {% endfor %}
+
+            {# Add a max of 2 empty columns #}
+            {% set total_entities = data.entity|count %}
+            {% set empty_entities = (limit or 2) - total_entities %}
+            {% if empty_entities <= 0 %}{% set empty_entities = 1 %}{% endif %}
+
+            {% for entity in range(total_entities, total_entities + empty_entities) %}
+              {% set index = loop.index0 + (data.entity|count) %}
+              {% set prefix = 'entity__%d__' % index %}
+              {% set checkboxId = prefix ~ 'isPattern'%}
+              {{ form.checkbox(checkboxId, label=_('Is ID Pattern'), checked=entity.isPattern, error=errors[checkboxId], classes=['control-full', 'entity-pattern']) }}
+              {{ form.custom(
+                    names=(prefix ~ 'id', prefix ~ 'value', prefix ~ 'delete'),
+                    id='field-entities-%d' % index,
+                    label=_('Entity'),
+                    values=(entity.id, entity.value, entity.deleted),
+                    error=errors[prefix ~ 'id'] or errors[prefix ~ 'value']
+               ) }}
+            {% endfor %}
+        </div>
+
+    {% set attrs_attrs = {'data-module': 'autocomplete', 'data-module-tags': '', 'data-module-source': ''} %}
+    {% call form.input('attrs_str', id='attrs_str', label=_('Attributes'), placeholder=_('Attributes'), value=data.attrs_str, error=errors.attrs_str, classes=['ngsireg-input', 'control-full', 'hidden'], attrs=attrs_attrs) %}
+        <span class="info-block info-block-small">
+            <i class="fa fa-info-circle"></i>
+            {{ _('Leave this field empty for all the attributes') }}
+        </span>
+    {% endcall %}
+
+    {{ form.input('expression', id='expression', label=_('Expression'), placeholder=_('georel:near;maxDistance:1000...'), value=data.expression, error=errors.expression, classes=['ngsireg-input', 'control-full', 'hidden']) }}
+
+    <h3 class="ngsiview-input hidden">NGSI Extra</h3>
     {{ form.input('tenant', id='tenant', label=_('Tenant'), placeholder=_('Tenant'), value=data.tenant, error=errors.tenant, classes=['ngsiview-input', 'control-full', 'hidden']) }}
     {{ form.input('service_path', id='service-path', label=_('Service Path'), placeholder=_('Service Path'), value=data.service_path, error=errors.service_path, classes=['ngsiview-input', 'control-full', 'hidden']) }}
     {{ form.select('oauth_req', label=_('OAuth-Token'), options=[{'value': 'true', 'text': _('required')},{'value': 'false', 'text': _('not required')}], selected=data.oauth_req, error=errors.oauth_req, classes=['ngsiview-input', 'hidden']) }}
     {{ form.textarea('payload', id='field-payload', label=_('Payload'), placeholder=_('JSON query'), value=data.payload, error=errors.payload, classes=['ngsiview-v1', 'hidden'])}}
 
     <script type="text/javascript">
-        var updatePayloadField = function updatePayloadField() {
-            var url, field = $("#field-image-url");
+        const formatEntityCheck = function formatEntityCheck() {
+            // Format checkbox
+            $('.entity-pattern').attr('style', 'margin-bottom: 5px;');
+            $('.entity-pattern input').removeAttr('value');
+            $('.entity-pattern input').attr('style', 'width:auto; float:right;');
+            $('.entity-pattern input').parent().removeClass('checkbox btn btn-danger fa fa-times');
+            $('.entity-pattern input').parent().attr('style', 'width:115px');
+
+            // Format custom label values
+            $("label:contains('Key')").text('Id');
+            $("label:contains('Value')").text('Type');
+        };
+
+        const addIsPatternField = function addIsPatternField(node) {
+            let inputID = node.find('input').attr('name').replace('id', 'isPattern');
+
+            let container = $('<div></div>').addClass('control-group control-full entity-pattern')
+            let controls = $('<div></div>').addClass('controls')
+            let label = $('<label for="' + inputID + '"></label>').text('Is Pattern');
+            let input = $('<input id="' + inputID +'" type="checkbox" name="' + inputID +'"></input>')
+
+            label.append(input);
+            controls.append(label);
+            container.append(controls);
+
+            node.before(container);
+
+            formatEntityCheck();
+        };
+
+        const setupCheckHandler = function setupCheckHandler() {
+            // Custom fields to be monitored
+            let target = $('.entity-pattern').parent()[0];
+
+            // Create an observer instance
+            let observer = new MutationObserver((mutations) => {
+                mutations.forEach((mutation) => {
+                    let newNodes = mutation.addedNodes; // DOM NodeList
+
+                    if (newNodes !== null) { // If there are new nodes added
+                        let $nodes = $(newNodes);
+
+                        $nodes.each(function () {
+                            // For each custom field, include the isPattern checkbox
+                            let node = $(this);
+                            if(node.hasClass("control-custom")) {
+                                addIsPatternField(node);
+                            }
+                        });
+                    }
+                });
+            });
+
+            // Configuration of the observer:
+            let config = {
+	            attributes: true,
+	            childList: true,
+	            characterData: true
+            };
+
+            // Pass in the target node, as well as the observer options
+            observer.observe(target, config);
+        };
+
+        const updatePayloadField = function updatePayloadField() {
+            let url, field = $("#field-image-url");
 
             if ($("#field-format").val() !== "fiware-ngsi" || field.val().trim() === "") {
                 $('.ngsiview-v1').addClass('hidden');
@@ -42,12 +152,19 @@
         document.addEventListener("DOMContentLoaded", function () {
             $("#field-format").on("change", function (e) {
                 updatePayloadField();
-                if (e.val === "fiware-ngsi") {
+                if (e.val === "fiware-ngsi" || e.val === 'fiware-ngsi-registry') {
                     $('.ngsiview-input').removeClass('hidden');
                     // Support the datastore plugin
                     $("#field-image-url").css("padding-right", "6px");
                     $('.btn-remove-url').addClass('hidden');
                     $("#field-image-upload + a + a")[0].click();
+
+                    if (e.val === 'fiware-ngsi-registry') {
+                        // Activate registry specific fields
+                        $('.ngsireg-input').removeClass('hidden');
+                        setupCheckHandler();
+                        formatEntityCheck();
+                    }
                 } else {
                     $('.ngsiview-input').addClass('hidden');
                     // Support the datastore plugin
@@ -56,8 +173,15 @@
                 }
             });
 
-            if ($("#field-format").val() === "fiware-ngsi") {
+            if ($("#field-format").val() === "fiware-ngsi" || $("#field-format").val() === "fiware-ngsi-registry") {
                 $('.ngsiview-input').removeClass('hidden');
+
+                if ($("#field-format").val() === "fiware-ngsi-registry") {
+                    $('.ngsireg-input').removeClass('hidden');
+                    setupCheckHandler();
+                    formatEntityCheck();
+                }
+
                 // Support the datastore plugin
                 setTimeout(function () {
                     updatePayloadField();
