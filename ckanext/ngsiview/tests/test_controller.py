@@ -33,11 +33,11 @@ class NgsiViewControllerTestCase(unittest.TestCase):
         cls.controller = ProxyNGSIController()
 
     @parameterized.expand([
-        ({}, {}),
-        ({"oauth_req": "true"}, {"X-Auth-Token": "valid-access-token"}),
-        ({"tenant": "a"}, {"FIWARE-Service": "a"}),
-        ({"service_path": "/a"}, {"FIWARE-ServicePath": "/a"}),
-        ({"tenant": "a", "service_path": "/a,/b"}, {"FIWARE-Service": "a", "FIWARE-ServicePath": "/a,/b"}),
+        ({'format': 'fiware-ngsi'}, {}),
+        ({"oauth_req": "true", 'format': 'fiware-ngsi'}, {"X-Auth-Token": "valid-access-token"}),
+        ({"tenant": "a", 'format': 'fiware-ngsi'}, {"FIWARE-Service": "a"}),
+        ({"service_path": "/a", 'format': 'fiware-ngsi'}, {"FIWARE-ServicePath": "/a"}),
+        ({"tenant": "a", "service_path": "/a,/b", 'format': 'fiware-ngsi'}, {"FIWARE-Service": "a", "FIWARE-ServicePath": "/a,/b"}),
     ])
     @patch.multiple("ckanext.ngsiview.controller", base=DEFAULT, logic=DEFAULT, requests=DEFAULT, toolkit=DEFAULT)
     def test_basic_request(self, resource, headers, base, logic, requests, toolkit):
@@ -92,7 +92,8 @@ class NgsiViewControllerTestCase(unittest.TestCase):
     def test_auth_required_request(self, auth_configured, base, logic, requests, toolkit):
         resource = {
             'url': "http://cb.example.org/v2/entites",
-            'oauth_req': 'true' if auth_configured else 'false'
+            'oauth_req': 'true' if auth_configured else 'false',
+            'format': 'fiware-ngsi'
         }
         logic.get_action('resource_show').return_value = resource
         response = requests.get()
@@ -119,6 +120,7 @@ class NgsiViewControllerTestCase(unittest.TestCase):
     def test_auth_required_request(self, exception, status_code, base, logic, requests, toolkit):
         resource = {
             'url': "http://cb.example.org/v2/entites",
+            'format': 'fiware-ngsi'
         }
         logic.get_action('resource_show').return_value = resource
         setattr(requests, exception, ValueError)
