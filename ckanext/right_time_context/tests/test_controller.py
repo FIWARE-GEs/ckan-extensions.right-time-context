@@ -2,27 +2,27 @@
 
 # Copyright (c) 2018 Future Internet Consulting and Development Solutions S.L.
 
-# This file is part of ckanext-ngsiview.
+# This file is part of ckanext-right_time_context.
 #
-# Ckanext-ngsiview is free software: you can redistribute it and/or
+# Ckanext-right_time_context is free software: you can redistribute it and/or
 # modify it under the terms of the GNU Affero General Public License as
 # published by the Free Software Foundation, either version 3 of the
 # License, or (at your option) any later version.
 #
-# Ckanext-ngsiview is distributed in the hope that it will be useful,
+# Ckanext-right_time_context is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
 # General Public License for more details.
 #
 # You should have received a copy of the GNU Affero General Public License
-# along with ckanext-ngsiview. If not, see http://www.gnu.org/licenses/.
+# along with ckanext-right_time_context. If not, see http://www.gnu.org/licenses/.
 
 import unittest
 
 from mock import ANY, DEFAULT, patch
 from parameterized import parameterized
 
-from ckanext.ngsiview.controller import ProxyNGSIController
+from ckanext.right_time_context.controller import ProxyNGSIController
 
 
 class NgsiViewControllerTestCase(unittest.TestCase):
@@ -67,7 +67,7 @@ class NgsiViewControllerTestCase(unittest.TestCase):
         ({"service_path": "/a", 'format': 'fiware-ngsi'}, {"FIWARE-ServicePath": "/a"}),
         ({"tenant": "a", "service_path": "/a,/b", 'format': 'fiware-ngsi'}, {"FIWARE-Service": "a", "FIWARE-ServicePath": "/a,/b"}),
     ])
-    @patch.multiple("ckanext.ngsiview.controller", base=DEFAULT, logic=DEFAULT, requests=DEFAULT, toolkit=DEFAULT, os=DEFAULT)
+    @patch.multiple("ckanext.right_time_context.controller", base=DEFAULT, logic=DEFAULT, requests=DEFAULT, toolkit=DEFAULT, os=DEFAULT)
     def test_basic_request(self, resource, headers, base, logic, requests, toolkit, os):
         resource['url'] = "http://cb.example.org/v2/entites"
         logic.get_action('resource_show').return_value = resource
@@ -103,7 +103,7 @@ class NgsiViewControllerTestCase(unittest.TestCase):
             'attrs': [],
         }, {})
     ])
-    @patch.multiple("ckanext.ngsiview.controller", base=DEFAULT, logic=DEFAULT, requests=DEFAULT, toolkit=DEFAULT, os=DEFAULT)
+    @patch.multiple("ckanext.right_time_context.controller", base=DEFAULT, logic=DEFAULT, requests=DEFAULT, toolkit=DEFAULT, os=DEFAULT)
     def test_registration_request(self, resource, query, headers, base, logic, requests, toolkit, os):
         logic.get_action('resource_show').return_value = resource
         response, body = self._mock_response(requests.post())
@@ -127,7 +127,7 @@ class NgsiViewControllerTestCase(unittest.TestCase):
         requests.post.assert_called_with(url, headers=expected_headers, json=query, stream=True, verify=True)
         base.response.body_file.write.assert_called_with(body)
 
-    @patch.multiple("ckanext.ngsiview.controller", base=DEFAULT, logic=DEFAULT, requests=DEFAULT, toolkit=DEFAULT, os=DEFAULT)
+    @patch.multiple("ckanext.right_time_context.controller", base=DEFAULT, logic=DEFAULT, requests=DEFAULT, toolkit=DEFAULT, os=DEFAULT)
     def test_invalid_expression(self, base, logic, requests, toolkit, os):
         resource = {
             'format': 'fiware-ngsi-registry',
@@ -149,7 +149,7 @@ class NgsiViewControllerTestCase(unittest.TestCase):
         self.controller.proxy_ngsi_resource("resource_id")
         base.abort.assert_called_with(422, detail='The expression is not a valid one for NGSI Registration, only georel, geometry, and coords is supported')
 
-    @patch.multiple("ckanext.ngsiview.controller", base=DEFAULT, logic=DEFAULT, requests=DEFAULT, toolkit=DEFAULT, os=DEFAULT)
+    @patch.multiple("ckanext.right_time_context.controller", base=DEFAULT, logic=DEFAULT, requests=DEFAULT, toolkit=DEFAULT, os=DEFAULT)
     def test_invalid_reg_query(self, base, logic, requests, toolkit, os):
         logic.get_action('resource_show').return_value = self.REGISTRY_RESOURCE
         response, body = self._mock_response(requests.post())
@@ -171,7 +171,7 @@ class NgsiViewControllerTestCase(unittest.TestCase):
         ("ftp://example.com",),
         ("tatata:///da",),
     ])
-    @patch.multiple("ckanext.ngsiview.controller", base=DEFAULT, logic=DEFAULT, requests=DEFAULT, toolkit=DEFAULT, os=DEFAULT)
+    @patch.multiple("ckanext.right_time_context.controller", base=DEFAULT, logic=DEFAULT, requests=DEFAULT, toolkit=DEFAULT, os=DEFAULT)
     def test_invalid_url_request(self, url, base, logic, requests, toolkit, os=DEFAULT):
         resource = {
             'url': url,
@@ -189,7 +189,7 @@ class NgsiViewControllerTestCase(unittest.TestCase):
         (True,),
         (False,),
     ])
-    @patch.multiple("ckanext.ngsiview.controller", base=DEFAULT, logic=DEFAULT, requests=DEFAULT, toolkit=DEFAULT, os=DEFAULT)
+    @patch.multiple("ckanext.right_time_context.controller", base=DEFAULT, logic=DEFAULT, requests=DEFAULT, toolkit=DEFAULT, os=DEFAULT)
     def test_auth_required_request(self, auth_configured, base, logic, requests, toolkit, os):
         resource = {
             'url': "http://cb.example.org/v2/entites",
@@ -220,7 +220,7 @@ class NgsiViewControllerTestCase(unittest.TestCase):
         ("ConnectionError", 502),
         ("Timeout", 504),
     ])
-    @patch.multiple("ckanext.ngsiview.controller", base=DEFAULT, logic=DEFAULT, requests=DEFAULT, toolkit=DEFAULT, os=DEFAULT)
+    @patch.multiple("ckanext.right_time_context.controller", base=DEFAULT, logic=DEFAULT, requests=DEFAULT, toolkit=DEFAULT, os=DEFAULT)
     def test_auth_required_request(self, exception, status_code, base, logic, requests, toolkit, os):
         resource = {
             'url': "http://cb.example.org/v2/entites",
@@ -240,19 +240,19 @@ class NgsiViewControllerTestCase(unittest.TestCase):
     @parameterized.expand([
         ({}, {}, True),
         ({}, {"ckan.verify_requests": False}, False),
-        ({}, {"ckan.ngsi.verify_requests": False, "ckan.verify_requests": True}, False),
+        ({}, {"ckan.right_time_context.verify_requests": False, "ckan.verify_requests": True}, False),
         ({"CKAN_VERIFY_REQUESTS": "false"}, {"ckan.verify_requests": True}, False),
-        ({"CKAN_NGSI_VERIFY_REQUESTS": "True"}, {"ckan.verify_requests": False}, True),
-        ({"CKAN_NGSI_VERIFY_REQUESTS": "True"}, {"ckan.ngsi.verify_requests": False}, True),
-        ({"CKAN_NGSI_VERIFY_REQUESTS": "true", "CKAN_VERIFY_REQUESTS": "false"}, {"ckan.verify_requests": False}, True),
-        ({"CKAN_NGSI_VERIFY_REQUESTS": "on"}, {"ckan.verify_requests": False}, True),
-        ({"CKAN_NGSI_VERIFY_REQUESTS": "1"}, {"ckan.verify_requests": False}, True),
-        ({"CKAN_NGSI_VERIFY_REQUESTS": "off"}, {"ckan.verify_requests": True}, False),
-        ({"CKAN_NGSI_VERIFY_REQUESTS": "0"}, {"ckan.verify_requests": True}, False),
-        ({"CKAN_NGSI_VERIFY_REQUESTS": "/path"}, {"ckan.verify_requests": True}, "/path"),
+        ({"CKAN_RIGHT_TIME_CONTEXT_VERIFY_REQUESTS": "True"}, {"ckan.verify_requests": False}, True),
+        ({"CKAN_RIGHT_TIME_CONTEXT_VERIFY_REQUESTS": "True"}, {"ckan.right_time_context.verify_requests": False}, True),
+        ({"CKAN_RIGHT_TIME_CONTEXT_VERIFY_REQUESTS": "true", "CKAN_VERIFY_REQUESTS": "false"}, {"ckan.verify_requests": False}, True),
+        ({"CKAN_RIGHT_TIME_CONTEXT_VERIFY_REQUESTS": "on"}, {"ckan.verify_requests": False}, True),
+        ({"CKAN_RIGHT_TIME_CONTEXT_VERIFY_REQUESTS": "1"}, {"ckan.verify_requests": False}, True),
+        ({"CKAN_RIGHT_TIME_CONTEXT_VERIFY_REQUESTS": "off"}, {"ckan.verify_requests": True}, False),
+        ({"CKAN_RIGHT_TIME_CONTEXT_VERIFY_REQUESTS": "0"}, {"ckan.verify_requests": True}, False),
+        ({"CKAN_RIGHT_TIME_CONTEXT_VERIFY_REQUESTS": "/path"}, {"ckan.verify_requests": True}, "/path"),
         ({"CKAN_VERIFY_REQUESTS": "/path/A/b"}, {"ckan.verify_requests": "path/2"}, "/path/A/b"),
     ])
-    @patch.multiple("ckanext.ngsiview.controller", base=DEFAULT, logic=DEFAULT, requests=DEFAULT, toolkit=DEFAULT, os=DEFAULT)
+    @patch.multiple("ckanext.right_time_context.controller", base=DEFAULT, logic=DEFAULT, requests=DEFAULT, toolkit=DEFAULT, os=DEFAULT)
     def test_verify_requests(self, env, config, expected_value, base, logic, requests, toolkit, os):
         logic.get_action('resource_show').return_value = {
             'url': "https://cb.example.org/v2/entites",

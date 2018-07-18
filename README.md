@@ -1,8 +1,8 @@
-CKAN ckanext-ngsiview
-=====================
+CKAN ckanext-right_time_context
+===============================
 
-[![Build Status](https://travis-ci.org/conwetlab/ckanext-ngsiview.svg?branch=master)](https://travis-ci.org/conwetlab/ckanext-ngsiview)
-[![Coverage Status](https://coveralls.io/repos/github/conwetlab/ckanext-ngsiview/badge.svg?branch=master)](https://coveralls.io/github/conwetlab/ckanext-ngsiview?branch=master)
+[![Build Status](https://travis-ci.org/conwetlab/ckanext-right_time_context.svg?branch=master)](https://travis-ci.org/conwetlab/ckanext-right_time_context)
+[![Coverage Status](https://coveralls.io/repos/github/conwetlab/ckanext-right_time_context/badge.svg?branch=master)](https://coveralls.io/github/conwetlab/ckanext-right_time_context?branch=master)
 
 CKAN extension that will give you the ability to manage real-time resources provided by a FIWARE Context Broker. This extension also provides a basic view to provide a data preview to user browsing context broker resources, altough it can be combined with other plugins (e.g. the [`ckanext-wirecloud_view`](https://github.com/conwetlab/ckanext-wirecloud_view.git) one) to provide a more advanced visualization of the data provided using CKAN.
 
@@ -17,7 +17,7 @@ therefore considered as the supported versions
 
 ## Installation
 
-To install ckanext-ngsiview:
+To install `ckanext-right_time_context`:
 
 1. Activate your CKAN virtual environment, for example:
 
@@ -25,13 +25,13 @@ To install ckanext-ngsiview:
     . /usr/lib/ckan/default/bin/activate
     ```
 
-2. Install the ckanext-ngsiview Python package into your virtual environment:
+2. Install the `ckanext-right_time_context` python package into your virtual environment:
 
     ```
-    pip install ckanext-ngsiview
+    pip install ckanext-right_time_context
     ```
 
-3. Add `ngsiview` to the `ckan.plugins` setting in your CKAN
+3. Add `right_time_context` to the `ckan.plugins` setting in your CKAN
    config file (e.g. `/etc/ckan/default/production.ini`).
 
 4. Restart CKAN. For example if you've deployed CKAN with Apache:
@@ -43,12 +43,12 @@ To install ckanext-ngsiview:
 
 ## Development Installation
 
-To install `ckanext-ngsiview` for development, activate your CKAN virtualenv and
+To install `ckanext-right_time_context` for development, activate your CKAN virtualenv and
 do:
 
 ```
-git clone https://github.com/conwetlab/ckanext-ngsiview.git
-cd ckanext-ngsiview
+git clone https://github.com/conwetlab/ckanext-right_time_context.git
+cd ckanext-right_time_context
 python setup.py develop
 ```
 

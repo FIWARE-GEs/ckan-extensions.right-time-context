@@ -50,7 +50,7 @@
     <h3 class="ngsiview-input hidden">NGSI Extra</h3>
     {{ form.input('tenant', id='tenant', label=_('Tenant'), placeholder=_('Tenant'), value=data.tenant, error=errors.tenant, classes=['ngsiview-input', 'control-full', 'hidden']) }}
     {{ form.input('service_path', id='service-path', label=_('Service Path'), placeholder=_('Service Path'), value=data.service_path, error=errors.service_path, classes=['ngsiview-input', 'control-full', 'hidden']) }}
-    {{ form.select('auth_type', label=_('Auth Type'), options=h.get_supported_auth(), selected=data.oauth_type, error=errors.auth_type, classes=['ngsiview-input', 'hidden']) }}
+    {{ form.select('auth_type', label=_('Auth Type'), options=h.right_time_context_get_available_auth_methods(), selected=data.auth_type, error=errors.auth_type, classes=['ngsiview-input', 'hidden']) }}
     {{ form.textarea('payload', id='field-payload', label=_('Payload'), placeholder=_('JSON query'), value=data.payload, error=errors.payload, classes=['ngsiview-v1', 'hidden'])}}
 
     <script type="text/javascript">

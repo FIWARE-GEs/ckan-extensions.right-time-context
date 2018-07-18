@@ -5,14 +5,14 @@
 # Copyright 2018 CoNWeT Lab. Univerisdad Politécnica de Madrid
 # Copyright (c) 2018 Future Internet Consulting and Development Solutions S.L.
 #
-# This file is part of ckanext-ngsipreview.
+# This file is part of ckanext-right_time_context.
 #
-# Ckanext-ngsiview is free software: you can redistribute it and/or
+# Ckanext-right_time_context is free software: you can redistribute it and/or
 # modify it under the terms of the GNU Affero General Public License as
 # published by the Free Software Foundation, either version 3 of the
 # License, or (at your option) any later version.
 #
-# Ckanext-ngsiview is distributed in the hope that it will be useful,
+# Ckanext-right_time_context is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
 # General Public License for more details.
@@ -150,7 +150,7 @@ class ProxyNGSIController(base.BaseController):
             base.abort(409, detail='Invalid URL.')
 
         # Process verify configuration
-        verify_conf = os.environ.get('CKAN_NGSI_VERIFY_REQUESTS', toolkit.config.get('ckan.ngsi.verify_requests'))
+        verify_conf = os.environ.get('CKAN_RIGHT_TIME_CONTEXT_VERIFY_REQUESTS', toolkit.config.get('ckan.right_time_context.verify_requests'))
         if verify_conf is None:
             verify_conf = os.environ.get('CKAN_VERIFY_REQUESTS', toolkit.config.get('ckan.verify_requests'))
 
