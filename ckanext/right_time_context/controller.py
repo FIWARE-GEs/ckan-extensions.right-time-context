@@ -151,10 +151,10 @@ class ProxyNGSIController(base.BaseController):
 
         # Process verify configuration
         verify_conf = os.environ.get('CKAN_RIGHT_TIME_CONTEXT_VERIFY_REQUESTS', toolkit.config.get('ckan.right_time_context.verify_requests'))
-        if verify_conf is None:
+        if verify_conf is None or (isinstance(verify_conf, six.string_types) and verify_conf.strip() == ""):
             verify_conf = os.environ.get('CKAN_VERIFY_REQUESTS', toolkit.config.get('ckan.verify_requests'))
 
-        if isinstance(verify_conf, six.string_types):
+        if isinstance(verify_conf, six.string_types) and verify_conf.strip() != "":
             compare_env = verify_conf.lower().strip()
             if compare_env in ("true", "1", "on"):
                 verify = True

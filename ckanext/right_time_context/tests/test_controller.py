@@ -239,7 +239,10 @@ class NgsiViewControllerTestCase(unittest.TestCase):
 
     @parameterized.expand([
         ({}, {}, True),
+        ({"CKAN_RIGHT_TIME_CONTEXT_VERIFY_REQUESTS": " "}, {}, True),
+        ({"CKAN_VERIFY_REQUESTS": " "}, {}, True),
         ({}, {"ckan.verify_requests": False}, False),
+        ({}, {"ckan.right_time_context.verify_requests": False}, False),
         ({}, {"ckan.right_time_context.verify_requests": False, "ckan.verify_requests": True}, False),
         ({"CKAN_VERIFY_REQUESTS": "false"}, {"ckan.verify_requests": True}, False),
         ({"CKAN_RIGHT_TIME_CONTEXT_VERIFY_REQUESTS": "True"}, {"ckan.verify_requests": False}, True),
@@ -250,6 +253,7 @@ class NgsiViewControllerTestCase(unittest.TestCase):
         ({"CKAN_RIGHT_TIME_CONTEXT_VERIFY_REQUESTS": "off"}, {"ckan.verify_requests": True}, False),
         ({"CKAN_RIGHT_TIME_CONTEXT_VERIFY_REQUESTS": "0"}, {"ckan.verify_requests": True}, False),
         ({"CKAN_RIGHT_TIME_CONTEXT_VERIFY_REQUESTS": "/path"}, {"ckan.verify_requests": True}, "/path"),
+        ({"CKAN_RIGHT_TIME_CONTEXT_VERIFY_REQUESTS": " "}, {"ckan.verify_requests": False}, False),
         ({"CKAN_VERIFY_REQUESTS": "/path/A/b"}, {"ckan.verify_requests": "path/2"}, "/path/A/b"),
     ])
     @patch.multiple("ckanext.right_time_context.controller", base=DEFAULT, logic=DEFAULT, requests=DEFAULT, toolkit=DEFAULT, os=DEFAULT)
