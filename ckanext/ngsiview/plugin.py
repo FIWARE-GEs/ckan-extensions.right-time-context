@@ -3,6 +3,7 @@
 
 # Copyright 2015 Telefonica Investigacion y Desarrollo, S.A.U
 # Copyright 2018 CoNWeT Lab, Universidad Politécnica de Madrid
+# Copyright (c) 2018 Future Internet Consulting and Development Solutions S.L.
 #
 # This file is part of ckanext-ngsipreview.
 #
@@ -21,7 +22,7 @@
 
 import logging
 
-from ckan.common import json
+from ckan.common import _, json
 import ckan.plugins as p
 import ckan.lib.helpers as h
 
@@ -49,6 +50,7 @@ class NgsiView(p.SingletonPlugin):
     p.implements(p.IConfigurable, inherit=True)
     p.implements(p.IResourceView, inherit=True)
     p.implements(p.IResourceController, inherit=True)
+    p.implements(p.ITemplateHelpers)
 
     def before_map(self, m):
         m.connect(
@@ -57,6 +59,25 @@ class NgsiView(p.SingletonPlugin):
             action='proxy_ngsi_resource'
         )
         return m
+
+    def get_helpers(self):
+
+        def get_available_auth_methods():
+            auth_options = [
+                {'value': 'none', 'text': _('None')},
+            ]
+
+            if self.oauth2_is_enabled:
+                auth_options.extend([
+                    {'value': 'oauth2', 'text': _('OAuth 2.0')},
+                    {'value': 'x-auth-token-fiware', 'text': _('OAuth 2.0 token using X-Auth-Token (deprecated)')},
+                ])
+
+            return auth_options
+
+        return {
+            "ngsiview_get_available_auth_methods": get_available_auth_methods,
+        }
 
     def get_proxified_ngsi_url(self, data_dict):
         url = h.url_for(
@@ -69,8 +90,8 @@ class NgsiView(p.SingletonPlugin):
         return url
 
     def configure(self, config):
-        self.proxy_is_enabled = config.get('ckan.resource_proxy_enabled')
-        self.oauth2_is_enabled = config.get('ckan.plugins').find('oauth2') != -1
+        self.proxy_is_enabled = p.plugin_loaded('resource_proxy')
+        self.oauth2_is_enabled = p.plugin_loaded('oauth2')
 
     def update_config(self, config):
         p.toolkit.add_template_directory(config, 'templates')
@@ -92,25 +113,18 @@ class NgsiView(p.SingletonPlugin):
     def can_view(self, data_dict):
         resource = data_dict['resource']
         format_lower = resource.get('format', '').lower()
-        proxy_enabled = p.plugin_loaded('resource_proxy')
         same_domain = datapreview.on_same_domain(data_dict)
 
         if (format_lower == NGSI_FORMAT and check_query(resource)) or format_lower == NGSI_REG_FORMAT:
-            return same_domain or proxy_enabled
+            return same_domain or self.proxy_is_enabled
         else:
             return False
 
     def setup_template_variables(self, context, data_dict):
         resource = data_dict['resource']
-        proxy_enabled = p.plugin_loaded('resource_proxy')
-        oauth2_enabled = p.plugin_loaded('oauth2')
         same_domain = datapreview.on_same_domain(data_dict)
         format_lower = resource.get('format', '').lower()
-
-        if 'oauth_req' not in resource:
-            oauth_req = 'false'
-        else:
-            oauth_req = resource['oauth_req']
+        resource.setdefault('auth_type', 'none')
 
         url = resource['url']
         if format_lower == NGSI_FORMAT and not check_query(resource):
@@ -118,7 +132,7 @@ class NgsiView(p.SingletonPlugin):
             f_details = "This is not a ContextBroker query, please check Orion Context Broker documentation."
             h.flash_error(f_details, allow_html=False)
             view_enable = [False, details]
-        elif not same_domain and not proxy_enabled:
+        elif not same_domain and not self.proxy_is_enabled:
             details = "</br></br>Enable resource_proxy</br></br></br>"
             f_details = "Enable resource_proxy."
             h.flash_error(f_details, allow_html=False)
@@ -128,13 +142,13 @@ class NgsiView(p.SingletonPlugin):
             if not same_domain:
                 url = self.get_proxified_ngsi_url(data_dict)
 
-            if oauth_req == 'true' and not p.toolkit.c.user:
+            if resource['auth_type'] != 'none' and not p.toolkit.c.user:
                 details = "</br></br>In order to see this resource properly, you need to be logged in.</br></br></br>"
                 f_details = "In order to see this resource properly, you need to be logged in."
                 h.flash_error(f_details, allow_html=False)
                 view_enable = [False, details]
 
-            elif oauth_req == 'true' and not oauth2_enabled:
+            elif resource['auth_type'] != 'none' and not self.oauth2_is_enabled:
                 details = "</br></br>In order to see this resource properly, enable oauth2 extension</br></br></br>"
                 f_details = "In order to see this resource properly, enable oauth2 extension."
                 h.flash_error(f_details, allow_html=False)
@@ -207,7 +221,7 @@ class NgsiView(p.SingletonPlugin):
 
     def before_create(self, context, resource):
         return self._serialize_resource(resource)
-    
+
     def after_create(self, context, resource):
         # Create entry in the NGSI registry
         pass
@@ -221,6 +235,7 @@ class NgsiView(p.SingletonPlugin):
     def before_show(self, resource):
         # Deserialize resource information
         entities = []
+
         def deserilize_handler(prefix):
             entity = {
                 'id': resource[prefix + 'id'],

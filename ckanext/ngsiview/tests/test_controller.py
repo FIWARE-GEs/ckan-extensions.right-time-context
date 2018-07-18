@@ -60,8 +60,9 @@ class NgsiViewControllerTestCase(unittest.TestCase):
         return response, body
 
     @parameterized.expand([
-        ({'format': 'fiware-ngsi'}, {}),
-        ({"oauth_req": "true", 'format': 'fiware-ngsi'}, {"X-Auth-Token": "valid-access-token"}),
+        ({"format": "fiware-ngsi"}, {}),
+        ({"auth_type": "x-auth-token-fiware", 'format': 'fiware-ngsi'}, {"X-Auth-Token": "valid-access-token"}),
+        ({"auth_type": "oauth2", 'format': 'fiware-ngsi'}, {"Authorization": "Bearer valid-access-token"}),
         ({"tenant": "a", 'format': 'fiware-ngsi'}, {"FIWARE-Service": "a"}),
         ({"service_path": "/a", 'format': 'fiware-ngsi'}, {"FIWARE-ServicePath": "/a"}),
         ({"tenant": "a", "service_path": "/a,/b", 'format': 'fiware-ngsi'}, {"FIWARE-Service": "a", "FIWARE-ServicePath": "/a,/b"}),
@@ -192,7 +193,7 @@ class NgsiViewControllerTestCase(unittest.TestCase):
     def test_auth_required_request(self, auth_configured, base, logic, requests, toolkit, os):
         resource = {
             'url': "http://cb.example.org/v2/entites",
-            'oauth_req': 'true' if auth_configured else 'false',
+            'auth_type': 'oauth2' if auth_configured else 'none',
             'format': 'fiware-ngsi'
         }
         logic.get_action('resource_show').return_value = resource

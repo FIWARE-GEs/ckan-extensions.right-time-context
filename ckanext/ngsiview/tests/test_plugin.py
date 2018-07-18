@@ -42,7 +42,7 @@ class NgsiViewPluginTest(unittest.TestCase):
     def test_can_view(self, resource_format, resource_url, same_domain, proxy_enabled, expected, datapreview, p):
         instance = plugin.NgsiView()
         datapreview.on_same_domain.return_value = same_domain
-        p.plugin_loaded.return_value = proxy_enabled
+        instance.proxy_is_enabled = proxy_enabled
         self.assertEqual(
             instance.can_view({'resource': {'format': resource_format, 'url': resource_url}}),
             expected

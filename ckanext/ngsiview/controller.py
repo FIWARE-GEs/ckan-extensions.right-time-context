@@ -112,6 +112,18 @@ class ProxyNGSIController(base.BaseController):
 
         return response
 
+    def process_auth_credentials(self, resource, headers):
+        auth_method = resource.get('auth_type', 'none')
+
+        if auth_method == "oauth2":
+            token = toolkit.c.usertoken['access_token']
+            headers['Authorization'] = "Bearer %s" % token
+        elif auth_method == "x-auth-token-fiware":
+            # Deprecated method, Including OAuth2 token retrieved from the IdM
+            # on the Open Stack X-Auth-Token header
+            token = toolkit.c.usertoken['access_token']
+            headers['X-Auth-Token'] = token
+
     def proxy_ngsi_resource(self, resource_id):
         # Chunked proxy for ngsi resources.
         context = {'model': base.model, 'session': base.model.Session, 'user': base.c.user or base.c.author}
@@ -123,9 +135,8 @@ class ProxyNGSIController(base.BaseController):
             'Accept': 'application/json'
         }
 
-        if 'oauth_req' in resource and resource['oauth_req'] == 'true':
-            token = toolkit.c.usertoken['access_token']
-            headers['X-Auth-Token'] = token
+        resource.setdefault('auth_type', 'none')
+        self.process_auth_credentials(resource, headers)
 
         if resource.get('tenant', '') != '':
             headers['FIWARE-Service'] = resource['tenant']
@@ -174,13 +185,12 @@ class ProxyNGSIController(base.BaseController):
             base.abort(504, detail=details)
 
         if r.status_code == 401:
-            if 'oauth_req' in resource and resource['oauth_req'] == 'true':
+            if resource.get('auth_type', 'none') != 'none':
                 details = 'ERROR 401 token expired. Retrieving new token, reload please.'
                 log.info(details)
                 toolkit.c.usertoken_refresh()
                 base.abort(409, detail=details)
-
-            elif 'oauth_req' not in resource or resource['oauth_req'] == 'false':
+            elif resource.get('auth_type', 'none') == 'none':
                 details = 'Authentication requested by server, please check resource configuration.'
                 log.info(details)
                 base.abort(409, detail=details)
