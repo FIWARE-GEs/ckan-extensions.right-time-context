@@ -1,0 +1,3 @@
+recursive-include ckanext/right_time_context/fanstatic *
+recursive-include ckanext/right_time_context/public *
+recursive-include ckanext/right_time_context/templates *

@@ -1,4 +1,4 @@
-ckan.module('ngsiview',function(jQuery,_){
+ckan.module('right_time_context',function(jQuery,_){
     return{
 		options:{
 	        i18n:{error:_('An error occurred: %(text)s %(error)s')},

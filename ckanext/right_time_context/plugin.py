@@ -5,14 +5,14 @@
 # Copyright 2018 CoNWeT Lab, Universidad Politécnica de Madrid
 # Copyright (c) 2018 Future Internet Consulting and Development Solutions S.L.
 #
-# This file is part of ckanext-ngsipreview.
+# This file is part of ckanext-right_time_context.
 #
-# Ckanext-ngsiview is free software: you can redistribute it and/or
+# Ckanext-right_time_context is free software: you can redistribute it and/or
 # modify it under the terms of the GNU Affero General Public License as
 # published by the Free Software Foundation, either version 3 of the
 # License, or (at your option) any later version.
 #
-# Ckanext-ngsiview is distributed in the hope that it will be useful,
+# Ckanext-right_time_context is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
 # General Public License for more details.
@@ -55,7 +55,7 @@ class NgsiView(p.SingletonPlugin):
     def before_map(self, m):
         m.connect(
             '/dataset/{id}/resource/{resource_id}/ngsiproxy',
-            controller='ckanext.ngsiview.controller:ProxyNGSIController',
+            controller='ckanext.right_time_context.controller:ProxyNGSIController',
             action='proxy_ngsi_resource'
         )
         return m
@@ -76,13 +76,13 @@ class NgsiView(p.SingletonPlugin):
             return auth_options
 
         return {
-            "ngsiview_get_available_auth_methods": get_available_auth_methods,
+            "right_time_context_get_available_auth_methods": get_available_auth_methods,
         }
 
     def get_proxified_ngsi_url(self, data_dict):
         url = h.url_for(
             action='proxy_ngsi_resource',
-            controller='ckanext.ngsiview.controller:ProxyNGSIController',
+            controller='ckanext.right_time_context.controller:ProxyNGSIController',
             id=data_dict['package']['name'],
             resource_id=data_dict['resource']['id']
         )
@@ -95,20 +95,21 @@ class NgsiView(p.SingletonPlugin):
 
     def update_config(self, config):
         p.toolkit.add_template_directory(config, 'templates')
-        p.toolkit.add_resource('fanstatic', 'ngsiview')
+        p.toolkit.add_resource('fanstatic', 'right_time_context')
         p.toolkit.add_public_directory(config, 'public')
 
     def info(self):
-        return {'name': 'ngsiview',
-                'title': p.toolkit._('NGSI'),
-                'icon': 'file-text-o' if p.toolkit.check_ckan_version(min_version='2.7') else 'file-text-alt',
-                'default_title': p.toolkit._('NGSI'),
-                'default_description': 'NGSI resource',
-                'always_available': False,
-                'iframed': True,
-                'preview_enabled': True,
-                'full_page_edit': False,
-                }
+        return {
+            'name': 'ngsi_view',
+            'title': p.toolkit._('NGSI'),
+            'icon': 'file-text-o' if p.toolkit.check_ckan_version(min_version='2.7') else 'file-text-alt',
+            'default_title': p.toolkit._('NGSI'),
+            'default_description': 'NGSI resource',
+            'always_available': False,
+            'iframed': True,
+            'preview_enabled': True,
+            'full_page_edit': False,
+        }
 
     def can_view(self, data_dict):
         resource = data_dict['resource']
