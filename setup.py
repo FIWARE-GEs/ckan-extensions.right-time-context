@@ -21,7 +21,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='ckanext-right_time_context',
-    version='0.1',
+    version='0.9',
     url='https://github.com/conwetlab/ckanext-right_time_context',
     author='CoNWeT Lab & FICODES',
     author_email='ckanextended@conwet.com',

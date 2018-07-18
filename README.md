@@ -4,7 +4,7 @@ CKAN ckanext-right_time_context
 [![Build Status](https://travis-ci.org/conwetlab/ckanext-right_time_context.svg?branch=master)](https://travis-ci.org/conwetlab/ckanext-right_time_context)
 [![Coverage Status](https://coveralls.io/repos/github/conwetlab/ckanext-right_time_context/badge.svg?branch=master)](https://coveralls.io/github/conwetlab/ckanext-right_time_context?branch=master)
 
-CKAN extension that will give you the ability to manage real-time resources provided by a FIWARE Context Broker. This extension also provides a basic view to provide a data preview to user browsing context broker resources, altough it can be combined with other plugins (e.g. the [`ckanext-wirecloud_view`](https://github.com/conwetlab/ckanext-wirecloud_view.git) one) to provide a more advanced visualization of the data provided using CKAN.
+CKAN extension that will give you the ability to manage right-time resources provided by a FIWARE Context Broker. This extension also provides a basic view to provide a data preview to user browsing context broker resources, altough it can be combined with other plugins (e.g. the [`ckanext-wirecloud_view`](https://github.com/conwetlab/ckanext-wirecloud_view.git) one) to provide a more advanced visualization of the data provided using CKAN.
 
 **Note**: This extension is being tested using CKAN 2.5, 2.6, 2.7 and 2.8. These are
 therefore considered as the supported versions
@@ -77,7 +77,7 @@ The way to create a NGSI resource is fairly simple:
     - `http://orion.lab.fiware.org:1026/v1/contextEntities/MeteoLo`
 
 3. Finally, check if you have to use some of the extra options:
-    - Set the `OAuth-Token` option to `required` if the Context Broker server
+    - Set `Auth Type` to the appropiate value if the Context Broker server
         requires authentication.
     - Fill the `FIWARE-Service` field if the data is not provided by the default
         [tenant](http://fiware-orion.readthedocs.io/en/master/user/multitenancy/).
