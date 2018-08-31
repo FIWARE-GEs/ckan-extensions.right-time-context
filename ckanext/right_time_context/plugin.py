@@ -39,7 +39,7 @@ NGSI_REG_FORMAT = 'fiware-ngsi-registry'
 
 
 def check_query(resource):
-    parsedurl = resource['url']
+    parsedurl = resource['url'].lower()
     return parsedurl.find('/v2/entities') != -1 or parsedurl.find('/v1/querycontext') != -1 or parsedurl.find('/v1/contextentities/') != -1
 
 
@@ -140,8 +140,7 @@ class NgsiView(p.SingletonPlugin):
             view_enable = [False, details]
             url = ''
         else:
-            if not same_domain:
-                url = self.get_proxified_ngsi_url(data_dict)
+            url = self.get_proxified_ngsi_url(data_dict)
 
             if resource['auth_type'] != 'none' and not p.toolkit.c.user:
                 details = "</br></br>In order to see this resource properly, you need to be logged in.</br></br></br>"
