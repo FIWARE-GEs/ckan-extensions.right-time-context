@@ -121,35 +121,32 @@ class NgsiView(p.SingletonPlugin):
         resource.setdefault('auth_type', 'none')
 
         url = resource['url']
-        if format_lower == NGSI_FORMAT and not check_query(resource):
-            details = "</br></br>This is not a ContextBroker query, please check <a href='https://forge.fiware.org/plugins/mediawiki/wiki/fiware/index.php/Publish/Subscribe_Broker_-_Orion_Context_Broker_-_User_and_Programmers_Guide'>Orion Context Broker documentation</a></br></br></br>"
-            f_details = "This is not a ContextBroker query, please check Orion Context Broker documentation."
-            h.flash_error(f_details, allow_html=False)
-            view_enable = [False, details]
-        elif not self.proxy_is_enabled:
+        if not self.proxy_is_enabled:
             details = "</br></br>Enable resource_proxy</br></br></br>"
             f_details = "Enable resource_proxy."
             h.flash_error(f_details, allow_html=False)
             view_enable = [False, details]
-            url = ''
+        elif resource['auth_type'] != 'none' and not self.oauth2_is_enabled:
+            details = "</br></br>In order to see this resource properly, enable oauth2 extension</br></br></br>"
+            f_details = "In order to see this resource properly, enable oauth2 extension."
+            h.flash_error(f_details, allow_html=False)
+            view_enable = [False, details]
+        elif format_lower == NGSI_FORMAT and not check_query(resource):
+            details = "</br></br>This is not a ContextBroker query, please check <a href='https://forge.fiware.org/plugins/mediawiki/wiki/fiware/index.php/Publish/Subscribe_Broker_-_Orion_Context_Broker_-_User_and_Programmers_Guide'>Orion Context Broker documentation</a></br></br></br>"
+            f_details = "This is not a ContextBroker query, please check Orion Context Broker documentation."
+            h.flash_error(f_details, allow_html=False)
+            view_enable = [False, details]
+        elif resource['auth_type'] != 'none' and not p.toolkit.c.user:
+            details = "</br></br>In order to see this resource properly, you need to be logged in.</br></br></br>"
+            f_details = "In order to see this resource properly, you need to be logged in."
+            h.flash_error(f_details, allow_html=False)
+            view_enable = [False, details]
         else:
+            # All checks passed
             url = self.get_proxified_ngsi_url(data_dict)
 
-            if resource['auth_type'] != 'none' and not p.toolkit.c.user:
-                details = "</br></br>In order to see this resource properly, you need to be logged in.</br></br></br>"
-                f_details = "In order to see this resource properly, you need to be logged in."
-                h.flash_error(f_details, allow_html=False)
-                view_enable = [False, details]
-
-            elif resource['auth_type'] != 'none' and not self.oauth2_is_enabled:
-                details = "</br></br>In order to see this resource properly, enable oauth2 extension</br></br></br>"
-                f_details = "In order to see this resource properly, enable oauth2 extension."
-                h.flash_error(f_details, allow_html=False)
-                view_enable = [False, details]
-
-            else:
-                data_dict['resource']['url'] = url
-                view_enable = [True, 'OK']
+            data_dict['resource']['url'] = url
+            view_enable = [True, 'OK']
 
         return {
             'resource_json': json.dumps(data_dict['resource']),

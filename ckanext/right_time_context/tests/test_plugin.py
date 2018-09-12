@@ -17,9 +17,10 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with ckanext-right_time_context. If not, see http://www.gnu.org/licenses/.
 
+import json
 import unittest
 
-from mock import DEFAULT, patch
+from mock import ANY, DEFAULT, patch
 from parameterized import parameterized
 
 from ckan.plugins.toolkit import ValidationError
@@ -88,3 +89,45 @@ class NgsiViewPluginTest(unittest.TestCase):
 
         instance.before_show(resource)
         self.assertEquals(deserialized, resource)
+
+    @parameterized.expand([
+        ["fiware-ngsi",          "https://context.example.org/v2/entities",               "none",   None],
+        ["fiware-ngsi",          "https://context.example.org/v1/queryContext",           "none",   None],
+        #TODO ["fiware-ngsi",          "https://context.example.org/v1/contextEntities",        "none",   None],
+        ["fiware-ngsi",          "https://context.example.org/v1/contextEntities/Entity", "none",   None],
+        ["fiware-ngsi",          "https://context.example.org/v2/entities",               "none",   "noproxy"],
+        ["fiware-ngsi",          "https://context.example.org/v2/entities",               "oauth2", "nooauth2"],
+        ["fiware-ngsi",          "https://context.example.org/other/path",                "none",   "noquery"],
+        ["fiware-ngsi",          "https://context.example.org/v2/entities",               "oauth2", "nologged"],
+        ["fiware-ngsi-registry", "https://context.example.org/",                          "none",   None],
+        ["fiware-ngsi-registry", "https://context.example.org/",                          "none",   "noproxy"],
+        ["fiware-ngsi-registry", "https://context.example.org/",                          "oauth2", "nooauth2"],
+        ["fiware-ngsi-registry", "https://context.example.org/",                          "oauth2", "nologged"],
+    ])
+    @patch.multiple('ckanext.right_time_context.plugin', p=DEFAULT, h=DEFAULT)
+    def test_setup_template_variables(self, resource_format, url, auth_type, error, p, h):
+        instance = plugin.NgsiView()
+        data_dict = {
+            "resource": {
+                "auth_type": auth_type,
+                "format": resource_format,
+                "url": url,
+            }
+        }
+        instance.proxy_is_enabled = error != "noproxy"
+        instance.oauth2_is_enabled = error != "nooauth2"
+        p.toolkit.c.user = error != "nologged"
+
+        with patch.object(instance, "get_proxified_ngsi_url", return_value="proxied_url"):
+            result = instance.setup_template_variables(None, data_dict)
+
+        view_enable = json.loads(result['view_enable'])
+        self.assertEqual(result['resource_json'], json.dumps(data_dict['resource']))
+
+        if error is None:
+            self.assertEqual(view_enable, [True, 'OK'])
+            self.assertEqual(result['resource_url'], '"proxied_url"')
+        else:
+            h.flash_error.assert_called_with(ANY, allow_html=False)
+            self.assertFalse(view_enable[0])
+            self.assertNotEqual(view_enable[1], 'OK')
