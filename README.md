@@ -12,6 +12,7 @@ therefore considered as the supported versions
 
 ## Requirements
 
+* `resource_proxy`. This extension is required to be able to make requests to the Context Broker and thus is required for the raw view (`ngsi-view`) provided by this plugin.
 * [OAuth2 CKAN Extension](https://github.com/conwetlab/ckanext-oauth2/). This extension is required to make request to secured Context Broker instances. The autentication token will be taken from the current user session, so the accessed context broker must be connected to the same IdM server as the one used to login into CKAN, if not, the token will not work.
 
 
@@ -32,13 +33,22 @@ To install `ckanext-right_time_context`:
     ```
 
 3. Add `right_time_context` to the `ckan.plugins` setting in your CKAN
-   config file (e.g. `/etc/ckan/default/production.ini`).
+   config file (e.g. `/etc/ckan/default/production.ini`). If you want to make
+   use of the raw view provided by this plugin, you will have to ensure the
+   `resource_proxy` is also enabled (comes directly with CKAN, but it is not
+   enabled by default)
 
 4. Restart CKAN. For example if you've deployed CKAN with Apache:
 
     ```
     sudo service apache2 graceful
     ```
+
+> Please take a look into the [`ckanext-oauth2` installation guide][ckanext-oauth2-inst]
+> if you are interested on linking secured context brokers.
+
+
+[ckanext-oauth2-inst]: https://github.com/conwetlab/ckanext-oauth2/wiki/Activating-and-Installing
 
 
 ## Development Installation
