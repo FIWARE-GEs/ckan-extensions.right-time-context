@@ -42,7 +42,7 @@ class ProxyNGSIController(base.BaseController):
 
     def _proxy_query_resource(self, resource, parsed_url, headers, verify=True):
 
-        if parsed_url.path.find('/v1/queryContext') != -1:
+        if parsed_url.path.lower().find('/v1/querycontext') != -1:
             if resource.get("payload", "").strip() == "":
                 details = 'Please add a payload to complete the query.'
                 base.abort(409, detail=details)
