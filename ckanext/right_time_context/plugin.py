@@ -28,11 +28,6 @@ import ckan.lib.helpers as h
 
 log = logging.getLogger(__name__)
 
-try:
-    import ckan.lib.datapreview as datapreview
-except ImportError:
-    pass
-
 
 NGSI_FORMAT = 'fiware-ngsi'
 NGSI_REG_FORMAT = 'fiware-ngsi-registry'
@@ -114,16 +109,14 @@ class NgsiView(p.SingletonPlugin):
     def can_view(self, data_dict):
         resource = data_dict['resource']
         format_lower = resource.get('format', '').lower()
-        same_domain = datapreview.on_same_domain(data_dict)
 
         if (format_lower == NGSI_FORMAT and check_query(resource)) or format_lower == NGSI_REG_FORMAT:
-            return same_domain or self.proxy_is_enabled
+            return self.proxy_is_enabled
         else:
             return False
 
     def setup_template_variables(self, context, data_dict):
         resource = data_dict['resource']
-        same_domain = datapreview.on_same_domain(data_dict)
         format_lower = resource.get('format', '').lower()
         resource.setdefault('auth_type', 'none')
 
@@ -133,7 +126,7 @@ class NgsiView(p.SingletonPlugin):
             f_details = "This is not a ContextBroker query, please check Orion Context Broker documentation."
             h.flash_error(f_details, allow_html=False)
             view_enable = [False, details]
-        elif not same_domain and not self.proxy_is_enabled:
+        elif not self.proxy_is_enabled:
             details = "</br></br>Enable resource_proxy</br></br></br>"
             f_details = "Enable resource_proxy."
             h.flash_error(f_details, allow_html=False)

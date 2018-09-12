@@ -30,19 +30,17 @@ import ckanext.right_time_context.plugin as plugin
 class NgsiViewPluginTest(unittest.TestCase):
 
     @parameterized.expand([
-        ('CSV', '', False, False, False),
-        ('CSV', '', False, True, False),
-        ('CSV', '', True, False, False),
-        ('fiware-ngsi', 'https://cb.example.com/v2/entities', True, False, True),
-        ('FIWARE-ngsi', 'https://cb.example.com/v2/entities', True, False, True),
-        ('fiware-ngsi', 'https://cb.example.com/v2/entities', False, False, False),
-        ('FIWARE-ngsi', 'https://cb.example.com/v2/entities', False, True, True),
-        ('FIWARE-ngsi', 'https://cb.example.com/othe/path', True, False, False),
+        ('CSV', '', False, False),
+        ('CSV', '', True, False),
+        ('fiware-ngsi', 'https://cb.example.com/v2/entities', False, False),
+        ('FIWARE-ngsi', 'https://cb.example.com/v2/entities', False, False),
+        ('FIWARE-ngsi', 'https://cb.example.com/v2/entities', True, True),
+        ('FIWARE-ngsi', 'https://cb.example.com/other/path', False, False),
+        ('fiware-ngsi', 'https://cb.example.com/other/path', True, False),
     ])
-    @patch.multiple('ckanext.right_time_context.plugin', datapreview=DEFAULT, p=DEFAULT)
-    def test_can_view(self, resource_format, resource_url, same_domain, proxy_enabled, expected, datapreview, p):
+    @patch.multiple('ckanext.right_time_context.plugin', p=DEFAULT)
+    def test_can_view(self, resource_format, resource_url, proxy_enabled, expected, p):
         instance = plugin.NgsiView()
-        datapreview.on_same_domain.return_value = same_domain
         instance.proxy_is_enabled = proxy_enabled
         self.assertEqual(
             instance.can_view({'resource': {'format': resource_format, 'url': resource_url}}),
